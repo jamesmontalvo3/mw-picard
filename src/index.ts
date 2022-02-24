@@ -1,0 +1,75 @@
+import path from "path";
+import { Command } from "commander";
+import packageJSON from "../package.json";
+import processExtensions from "./processExtensions";
+
+const program = new Command();
+
+program
+	.name("mw-picard")
+	.description("CLI to make MediaWiki config so")
+	.version(packageJSON.version);
+
+type GetExtOptions = {
+	baseline?: string;
+	specifier?: string;
+	mediawiki?: string;
+	extensions?: string;
+	skins?: string;
+};
+
+program
+	.command("get-ext")
+	.description("Get extension configuration")
+	.option(
+		"--baseline <file>",
+		"YAML file to pull baseline extension config from",
+		false
+	)
+	.option(
+		"--specifier <file>",
+		"YAML file to pull specifier extension config from",
+		false
+	)
+	.option(
+		"--mediawiki <directory>",
+		"Path to MediaWiki directory (in which extensions/ and skins/ typically reside)",
+		false
+	)
+	.option(
+		"--extensions <directory>",
+		"Path to extensions/ directory if not within MediaWiki directory",
+		false
+	)
+	.option(
+		"--skins <directory>",
+		"Path to skins/ directory if not within MediaWiki directory",
+		false
+	)
+	.action(async (options: GetExtOptions) => {
+		const { baseline, specifier, mediawiki } = options;
+
+		if (!baseline || !specifier || !mediawiki) {
+			program.error("Need to provide --baseline, --specifier, and --mediawiki");
+			return;
+		}
+
+		const extensions = options.extensions || path.join(mediawiki, "extensions");
+		const skins = options.skins || path.join(mediawiki, "skins");
+
+		const result = await processExtensions({
+			baseline,
+			specifier,
+			mediawiki,
+			extensions,
+			skins,
+		});
+
+		if (result) {
+			console.log("Complete"); // eslint-disable-line no-console
+		} else {
+			console.log("An error occurred"); // eslint-disable-line no-console
+		}
+	});
+
+program.parse();

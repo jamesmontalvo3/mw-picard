@@ -1,0 +1,31 @@
+import type { Config } from "@jest/types";
+
+const config: Config.InitialOptions = {
+	preset: "ts-jest",
+	testMatch: ["**/*.spec.ts"],
+	verbose: true,
+	coverageReporters: ["text", "lcov", "cobertura"],
+	coverageDirectory: "coverage",
+	collectCoverageFrom: [
+		"./src/**/*.{js,jsx,ts,tsx}",
+		"!**/node_modules/**",
+		"!**/.cache/**",
+		"!**/.github/**",
+		"!**/.gitlab/**",
+		"!**/.vscode/**",
+		"!**/coverage/**",
+		"!**/dist/**",
+		"!**/docs/**",
+	],
+	testPathIgnorePatterns: [
+		"<rootDir>/node_modules/",
+		"<rootDir>/.cache/",
+		"<rootDir>/.github/",
+		"<rootDir>/.gitlab/",
+		"<rootDir>/.vscode/",
+		"<rootDir>/coverage/",
+		"<rootDir>/dist/",
+		"<rootDir>/docs/",
+	],
+};
+export default config;
