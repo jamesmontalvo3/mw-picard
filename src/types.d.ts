@@ -23,6 +23,7 @@ type ExtensionConfig = StandardExtensionConfig | ComposerExtensionConfig;
 
 type BaselineExtensionConfig = ExtensionConfig & { bundles?: string[] };
 type PartialExtensionConfig = Partial<ExtensionConfig> & { name: string };
+type ExtensionConfigMap = { [name: string]: ExtensionConfig };
 
 type MWPicardError<E = unknown> = {
 	failed: true;

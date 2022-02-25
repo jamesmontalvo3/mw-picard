@@ -73,7 +73,7 @@ const processExtensions = async (
 
 	// FIXME has enabling/disabling SMW in wiki farm been figured out?
 
-	const priorInstallationMap: { [name: string]: ExtensionConfig } = {};
+	const priorInstallationMap: ExtensionConfigMap = {};
 	if (priorInstallation) {
 		for (const ext of priorInstallation) {
 			priorInstallationMap[ext.name] = ext;
@@ -83,10 +83,11 @@ const processExtensions = async (
 	// 1. Git-clone/checkout extensions
 	//        1. Do extension submodule updates as necessary
 	// 2. Ditto for skins
+	// 2a. Remove directories in extensions/ and skins/ that don't belong ???
 	const gitResult = await doGitExtensions({
 		extensionsPath: paths.extensions,
 		skinsPath: paths.skins,
-		extensionConfig,
+		extensionsConfig,
 		priorExtensions: priorInstallationMap,
 	});
 
