@@ -9,13 +9,13 @@ A "baseline" extension config defines all the extensions that could possibly be 
 ```yaml
 - name: SemanticExtraSpecialProperties
   composer: "mediawiki/semantic-extra-special-properties"
-  update_php_on_change: true
+  update_php_on_change: "all"
   version: "2.0.0"
 
 - name: Echo
   repo: https://github.com/wikimedia/mediawiki-extensions-Echo.git
   version: "d34f32174c23818dbf057a5482dc6ed4781a3a25"
-  update_php_on_change: true
+  update_php_on_change: "code-changes"
   config: |
     $wgEchoEmailFooterAddress = $wgPasswordSender;
 
@@ -27,13 +27,13 @@ A "baseline" extension config defines all the extensions that could possibly be 
 - name: Elastica
   repo: https://github.com/wikimedia/mediawiki-extensions-Elastica.git
   version: "REL1_35"
-  update_php_on_change: true
+  update_php_on_change: "code-changes"
   composer_merge: True
 
 - name: VisualEditor
   repo: https://github.com/wikimedia/mediawiki-extensions-VisualEditor.git
   version: "REL1_35"
-  update_php_on_change: true
+  update_php_on_change: "code-changes"
   git_submodules: True
 
 - name: Vector

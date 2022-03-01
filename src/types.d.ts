@@ -7,7 +7,7 @@ type CommonExtensionConfig = {
 	composer_merge?: boolean;
 	git_submodules?: boolean;
 	legacy_load?: boolean;
-	update_php_on_change?: boolean;
+	update_php_on_change?: false | "code-changes" | "all";
 	wikis?: string[];
 };
 
