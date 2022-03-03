@@ -109,7 +109,10 @@ type GitCloneProps = {
 	version: string;
 };
 
-const getGitSetHeadCmd = ({
+/**
+ * Returns a command like: `git checkout ${version}`, optionally prefixed with `git fetch &&`, etc
+ */
+const gitCheckout = ({
 	cloneDirectory,
 	version,
 	fetch,
@@ -137,34 +140,66 @@ const gitClone = async ({
 }: GitCloneProps): "a return" => {
 	const parentDir = path.dirname(cloneDirectory);
 	const repoDirname = path.basename(cloneDirectory);
+
+	const checkout = gitCheckout({
+		cloneDirectory,
+		repo,
+		version,
+		fetch: false, // don't fetch, we just cloned
+		eraseChanges: true, // don't erase changes, just cloned, there couldn't be any
+	});
+
 	const { stdout, stderr } = await asyncExec(
-		`cd ${parentDir} && git clone ${repo} ./${repoDirname} && ` +
-			getGitSetHeadCmd({
-				cloneDirectory,
-				repo,
-				version,
-				fetch: false,
-				eraseChanges: true,
-			})
+		`cd ${parentDir} && git clone ${repo} ./${repoDirname} && ${checkout}`
 	);
 };
 
 const makeGitRight = async (props: GitCloneProps): Promise<boolean> => {
 	const { cloneDirectory, repo, version } = props;
 	if (await isGitRepo(cloneDirectory)) {
-		const { stdout, stderr } = await asyncExec(
-			getGitSetHeadCmd({
-				...props,
-				fetch: true,
-				eraseChanges: true,
-			})
-		);
+		const cmd = gitCheckout({
+			...props,
+			fetch: true,
+			eraseChanges: true,
+		});
+		const { stdout, stderr } = await asyncExec(cmd);
 	} else {
 		gitClone(props);
 	}
 };
 
-const doExtensions = ({
+const makeComposerJson = (extensions: ExtensionConfig[]): string => {
+	const composerJson: {
+		require: Record<string, string>;
+		extra: {
+			"merge-plugin": {
+				include: string[];
+			};
+		};
+	} = {
+		require: {},
+		extra: {
+			"merge-plugin": {
+				include: [],
+			},
+		},
+	};
+
+	for (const ext of extensions) {
+		if ("composer" in ext) {
+			composerJson.require[ext.composer] = ext.version;
+		}
+		if (ext.composer_merge) {
+			composerJson.extra["merge-plugin"].include.push(
+				`extensions/${ext.name}/composer.json`
+			);
+		}
+	}
+
+	return JSON.stringify(composerJson, null, 2);
+};
+
+const doExtensions = async ({
 	extensionsPath,
 	skinsPath,
 	extensionsConfig,
@@ -174,12 +209,12 @@ const doExtensions = ({
 	skinsPath: string;
 	extensionsConfig: ExtensionConfig[];
 	priorExtensions: ExtensionConfigMap;
-}): "made up return" => {
+}): Promise<"made up return"> => {
 	let runUpdatePhp: boolean | string[] = false;
 
 	for (const ext of extensionsConfig) {
 		if ("composer" in ext) {
-			continue; // this function handles git-managed extensions, not composer managed
+			continue;
 		}
 		if (!shouldUpdateExtension(ext, priorExtensions[ext.name])) {
 			continue;
@@ -188,29 +223,13 @@ const doExtensions = ({
 			ext.skin ? skinsPath : extensionsPath,
 			ext.name
 		);
+		// FIXME successs?
 		const success = await makeGitRight({
 			cloneDirectory,
 			repo: ext.repo,
 			version: ext.version,
 		});
-	}
 
-	for (const ext of extensionsConfig) {
-		if ("repo" in ext) {
-			continue; // fixme also do whatever needs doing for composer_merge?
-		}
-		if (!shouldUpdateExtension(ext, priorExtensions[ext.name])) {
-			continue;
-		}
-		const cloneDirectory = path.join(
-			ext.skin ? skinsPath : extensionsPath,
-			ext.name
-		);
-		const success = await makeComposerDoingOf({
-			cloneDirectory,
-			composer: ext.composer,
-			version: ext.version,
-		});
 		if (success) {
 		} else {
 			// fixme err?
@@ -246,6 +265,7 @@ const doExtensions = ({
 	return {
 		extensionSettings,
 		runUpdatePhp,
+		composerJson: makeComposerJson(extensionsConfig),
 	};
 };
 

@@ -42,7 +42,8 @@
 		"clean": "rimraf ./dist/**",
 		"lint": "eslint . --color --ext .js,.jsx,.ts,.tsx",
 		"lint:fix": "eslint . --color --fix --ext .js,.jsx,.ts,.tsx",
-		"test": "jest"
+		"test": "jest",
+		"test:coverage": "jest --coverage"
 	},
 	"dependencies": {
 		"commander": "^9.0.0",

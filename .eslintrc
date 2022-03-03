@@ -100,6 +100,15 @@
 				"location": "anywhere"
 			}
 		],
+		"id-denylist": [
+			"error",
+			"asdf",
+			"adsf",
+			"fixme",
+			"temp",
+			"things",
+			"stuff"
+		],
 		"no-implied-eval": "error",
 		"no-bitwise": "error",
 		"no-eval": "error",

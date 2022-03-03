@@ -1,20 +1,20 @@
 <?xml version="1.0" ?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage lines-valid="75" lines-covered="36" line-rate="0.48" branches-valid="33" branches-covered="17" branch-rate="0.5151" timestamp="1646081748687" complexity="0" version="0.1">
+<coverage lines-valid="75" lines-covered="40" line-rate="0.5333" branches-valid="33" branches-covered="17" branch-rate="0.5151" timestamp="1646157949410" complexity="0" version="0.1">
   <sources>
     <source>C:\Users\ejmontal\docs\wiki\mw-picard</source>
   </sources>
   <packages>
-    <package name="main" line-rate="0.48" branch-rate="0.5151">
+    <package name="main" line-rate="0.5333" branch-rate="0.5151">
       <classes>
-        <class name="asyncExec.ts" filename="src\asyncExec.ts" line-rate="0" branch-rate="1">
+        <class name="asyncExec.ts" filename="src\asyncExec.ts" line-rate="1" branch-rate="1">
           <methods>
           </methods>
           <lines>
-            <line number="1" hits="0" branch="false"/>
-            <line number="2" hits="0" branch="false"/>
-            <line number="3" hits="0" branch="false"/>
-            <line number="5" hits="0" branch="false"/>
+            <line number="1" hits="1" branch="false"/>
+            <line number="2" hits="1" branch="false"/>
+            <line number="3" hits="1" branch="false"/>
+            <line number="5" hits="1" branch="false"/>
           </lines>
         </class>
         <class name="asyncRimraf.ts" filename="src\asyncRimraf.ts" line-rate="0" branch-rate="1">
