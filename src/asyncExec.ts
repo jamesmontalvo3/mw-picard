@@ -1,6 +1,5 @@
 import util from "util";
 import { exec } from "child_process";
-const asyncExec = util.promisify(exec);
 
 export type ExecError = {
 	killed: boolean;
@@ -9,6 +8,6 @@ export type ExecError = {
 	cmd: string;
 	stdout: string;
 	stderr: string;
+	stack: string;
 };
-
-export default asyncExec;
+export const asyncExec = util.promisify(exec);

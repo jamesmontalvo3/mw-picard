@@ -61,15 +61,18 @@ program
 			baseline,
 			specifier,
 			mediawiki,
+			composerCmd: "/usr/bin/composer",
 			extensions,
 			skins,
 		});
 
-		if (result) {
-			console.log("Complete"); // eslint-disable-line no-console
-		} else {
-			console.log("An error occurred"); // eslint-disable-line no-console
+		const jsonResult = JSON.stringify(result, null, 2);
+
+		if (result.status === "ERROR") {
+			console.log("An error occurred.\n\n" + jsonResult); // eslint-disable-line no-console
 		}
+
+		console.log(jsonResult); // eslint-disable-line no-console
 	});
 
 program.parse();

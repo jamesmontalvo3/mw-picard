@@ -2,15 +2,16 @@ import path from "path";
 import { promises as fsp } from "fs";
 import YAML from "js-yaml";
 import getExtensionConfig, {
-	isExtensionConfig,
 	isExtensionConfigArray,
 	isPartialExtensionConfigArray,
 } from "./getExtensionConfig";
+import doExtensions, { DoExtensionsResult } from "./doExtensions";
 
 type ProcessExtensionsProps = {
 	baseline: string;
 	specifier: string;
 	mediawiki: string;
+	composerCmd: string;
 	extensions: string;
 	skins: string;
 };
@@ -35,7 +36,7 @@ const loadYamlFile = async (
 
 const processExtensions = async (
 	paths: ProcessExtensionsProps
-): Promise<boolean> => {
+): Promise<DoExtensionsResult> => {
 	let baseline: ExtensionConfig[] | false = false;
 	let specifier: PartialExtensionConfig[] | false = false;
 	let priorInstallation: ExtensionConfig[] | false;
@@ -62,66 +63,38 @@ const processExtensions = async (
 				? false
 				: installedMaybe;
 	} catch (err) {
-		return false; // FIXME return error?
+		return { status: "ERROR" }; // FIXME return error?
 	}
 
 	if (!baseline || !specifier) {
-		return false; // fixme throw? return error?
+		return { status: "ERROR" }; // fixme throw? return error?
 	}
 
-	const extensionConfig = getExtensionConfig(baseline, specifier);
+	const extensionsConfig = getExtensionConfig(baseline, specifier);
 
 	// FIXME has enabling/disabling SMW in wiki farm been figured out?
-
-	const priorInstallationMap: ExtensionConfigMap = {};
-	if (priorInstallation) {
-		for (const ext of priorInstallation) {
-			priorInstallationMap[ext.name] = ext;
-		}
-	}
 
 	// 1. Git-clone/checkout extensions
 	//        1. Do extension submodule updates as necessary
 	// 2. Ditto for skins
 	// 2a. Remove directories in extensions/ and skins/ that don't belong ???
-	const gitResult = await doGitExtensions({
+	const result = await doExtensions({
 		extensionsPath: paths.extensions,
 		skinsPath: paths.skins,
-		extensionsConfig,
-		priorExtensions: priorInstallationMap,
-	});
-
-	// 3. Create composer.local.json
-	const composerJsonChanged = await createComposerLocalJson({
 		mediawikiPath: paths.mediawiki,
-		extensionConfig,
+		composerCmd: paths.composerCmd,
+		extensionsConfig,
+		priorInstallation,
 	});
 
-	// 4. Run composer install/update
-	if (composerJsonChanged) {
-		const composerUpdateResult = await runComposerInstallUpdate({
-			mediawikiPath: paths.mediawiki,
-		});
+	if (result.status === "ERROR" || result.status === "NOCHANGE") {
+		return result;
 	}
 
-	// 5. Generate specifier `.installed.yml`
-	await fsp.writeFile(priorInstallationFilePath, YAML.dump(extensionConfig));
+	// Generate specifier `.installed.yml`
+	await fsp.writeFile(priorInstallationFilePath, YAML.dump(extensionsConfig));
 
-	// 6. Generate `ExtensionSettings.php`
-	const extSettingsResult = await createExtensionSettings({
-		extensionsPath: paths.extensions,
-		skinsPath: paths.skins,
-		extensionConfig,
-	});
-
-	// 7. Generate `update-php-required.json`
-	const updatePhpRequiredResult = await generateUpdatePhpRequiredJson({
-		extensionConfig,
-		priorExtensions: priorInstallationMap,
-		configDir,
-	});
-
-	return 1;
+	return result;
 };
 
 export default processExtensions;

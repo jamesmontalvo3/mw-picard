@@ -1,18 +1,11 @@
-import asyncExec, { ExecError } from "./asyncExec";
-import { exec } from "child_process";
+import { asyncExec, ExecError } from "./asyncExec";
 
 describe("asyncExec()", () => {
-	// it("should reject/throw for a bad command", async () => {
-	// 	const promise = asyncExec("THIS_IS_A_BOGUS_COMMAND");
-	// 	await expect(promise).rejects.toEqual("something");
-	// });
-
-	// FIXME
 	it("should reject/throw for a bad command 2222222222", async () => {
 		let result: {
 			stdout?: string;
 			stderr?: string;
-			error?: unknown;
+			error?: ExecError;
 		};
 		try {
 			const res = await asyncExec("THIS_IS_A_BOGUS_COMMAND");
@@ -25,29 +18,24 @@ describe("asyncExec()", () => {
 			result = { error };
 		}
 
-		console.log("CODE --->", Object.keys(result.error as any));
-
 		expect(result.stdout).toBeFalsy();
 		expect(result.stderr).toBeFalsy();
-		expect(result.error).toEqual("something");
-	});
 
-	// it("should give no stdout/stderr and produce error for a bad command", async () => {
-	// 	let result: {
-	// 		stdout?: string;
-	// 		stderr?: string;
-	// 		error?: unknown;
-	// 	};
-	// 	try {
-	// 		const res = await asyncExec("THIS_IS_A_BOGUS_COMMAND");
-	// 		result = { ...res };
-	// 	} catch (error) {
-	// 		result = { error };
-	// 	}
-	// 	expect(result.stdout).toBeFalsy();
-	// 	expect(result.stderr).toBeFalsy();
-	// 	expect(result.error).toBeFalsy();
-	// });
+		expect(result.error).toBeDefined();
+		if (!result.error) {
+			return; // this allows types to work below
+		}
+
+		expect(result.error.killed).toEqual(false);
+		expect(result.error.code).toEqual(1);
+		expect(result.error.signal).toBeNull();
+		expect(result.error.cmd).toEqual("THIS_IS_A_BOGUS_COMMAND");
+
+		// stdout and stderr on Error object, not from try {...}
+		expect(result.error.stdout).toEqual("");
+		expect(typeof result.error.stderr).toEqual("string");
+		expect(result.error.stderr.length).toBeGreaterThan(1);
+	});
 
 	it("should resolve for a valid command", async () => {
 		const { stdout, stderr } = await asyncExec("dir"); // `dir` is valid DOS and Bash command
