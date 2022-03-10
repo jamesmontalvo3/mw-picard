@@ -5,6 +5,7 @@ import { asyncExec } from "./asyncExec";
 import propsMatch from "./propsMatch";
 import difference from "lodash/difference";
 import deepEqual from "lodash/isEqual";
+import { uniq } from "lodash";
 
 const codeProps = ["name", "version", "composer", "repo", "skin"];
 const confProps = ["config", "more_config"];
@@ -22,6 +23,26 @@ export const shouldUpdateExtension = (
 	return true;
 };
 
+/**
+ * Whether or not (true or false) an extension requires update.php to be run, or if the extension is
+ * only enabled on some wikis, what wikis require update (array of wiki IDs). The cases for when to
+ * update.php are as follows, and each case is covered in tests:
+ *
+ * Unchanged extension:
+ * Case 1: should not-update.php       if no-change AND all-wikis-before AND all-wikis-now
+ * Case 2: should not-update.php       if no-change AND all-wikis-before AND select-wikis-now
+ * Case 3: should update.php-all       if no-change AND select-wikis-before AND all-wikis-now [1]
+ * Case 4: should update.php-new-wikis if no-change AND select-wikis-before AND select-wikis-now [2]
+ * Changed extension:
+ * Case 5: should update.php-all       if changed AND all-wikis-before AND all-wikis-now
+ * Case 6: should update.php-now-wikis if changed AND all-wikis-before AND select-wikis-now
+ * Case 7: should update.php-all       if changed AND select-wikis-before AND all-wikis-now
+ * Case 8: should update.php-now-wikis if changed AND select-wikis-before AND select-wikis-now
+ *
+ * Notes:
+ * [1] Really these could be only update (allWikis - specified) but we can't calculate that
+ * [2] Returns difference between now and before, unless the difference is zero, then return false
+ */
 export const shouldRunUpdatePhp = (
 	newConf: ExtensionConfig,
 	oldConf?: ExtensionConfig
@@ -30,7 +51,7 @@ export const shouldRunUpdatePhp = (
 		return false;
 	}
 	if (!oldConf) {
-		return true;
+		return newConf.wikis || true;
 	}
 
 	const propsToCheck =
@@ -40,17 +61,23 @@ export const shouldRunUpdatePhp = (
 
 	const extensionIsUnchanged = propsMatch(newConf, oldConf, propsToCheck);
 
-	const oldWikiConf = oldConf.wikis || [];
-	const newWikiConf = newConf.wikis || [];
+	const beforeWikis = oldConf.wikis;
+	const nowWikis = newConf.wikis;
 
-	if (extensionIsUnchanged) {
-		const newWikis = difference(oldWikiConf, newWikiConf);
-		if (newWikis.length === 0) {
-			return false;
-		}
-		return newWikis; // array of wiki IDs requiring update
+	const newWikis = difference(oldConf.wikis || [], newConf.wikis || []);
+
+	// See docs for this function regarding cases
+	if (extensionIsUnchanged && !beforeWikis) {
+		// not-beforeWikis means no wikis specified before, and thus the extension was installed on
+		// all wikis before
+		return false; // latest extension is already on all wikis (case 1 and 2)
+	} else if (!nowWikis) {
+		return true; // case 3, 5, and 7
+	} else if (extensionIsUnchanged) {
+		const ret = newWikis.length ? newWikis : false;
+		return ret; // case 4 (1, 2, and 3 already removed, 4 only left for no-change)
 	}
-	return true;
+	return nowWikis; // case 6 and 8
 };
 
 export const createLoadCommand = (ext: ExtensionConfig): string => {
@@ -68,6 +95,7 @@ export const createLoadCommand = (ext: ExtensionConfig): string => {
 		: `wfLoadExtension( "${ext.name}" );\n`;
 };
 
+// FIXME add test for empty wikis array (git clones ext, but no wiki uses it)
 export const createExtensionSettings = (ext: ExtensionConfig): string => {
 	const commentHeader = `/**** ${ext.name} @ ${ext.version} ****/\n`;
 
@@ -331,18 +359,25 @@ const doExtensions = async ({
 		}
 
 		const result = shouldRunUpdatePhp(ext, priorInstallationMap[ext.name]);
-		if (!Array.isArray(result)) {
-			runUpdatePhp = result; // (a) keep as false or (b) set to true and break on next pass
-			continue;
+
+		if (result === true) {
+			runUpdatePhp = true;
+			continue; // could break, but continuing allows break above to be test-covered
+		} else if (result === false) {
+			continue; // keep whatever runUpdatePhp is now
 		}
 
-		runUpdatePhp = Array.isArray(runUpdatePhp)
-			? [...runUpdatePhp, ...result] // add to existing array of wikis
-			: result;
+		// at this point result could only be an array of strings and runUpdatePhp !== true
+		if (runUpdatePhp === false) {
+			runUpdatePhp = result;
+		} else {
+			runUpdatePhp = uniq([...runUpdatePhp, ...result]);
+		}
 	}
 
+	// FIXME should say "written by mw-picard v1.0.0"
 	await doExtensionSettings({ extensionsPath, extensionsConfig });
-
+	// FIXME const success = ... for each of these
 	await doComposerExtensions({
 		mediawikiPath,
 		composerCmd,

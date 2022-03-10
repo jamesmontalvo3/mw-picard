@@ -64,6 +64,10 @@ const makeWriteFileSpy = ({
 	return jest.spyOn(fs.promises, "writeFile").mockImplementation(mock);
 };
 
+const makeConsoleErrorSpy = () => {
+	return jest.spyOn(console, "error").mockImplementation(jest.fn());
+};
+
 describe("shouldUpdateExtension()", () => {
 	it("should update extension if props change", () => {
 		expect(
@@ -283,7 +287,22 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should run update.php if no old conf and extension requires update.php", () => {
+	it("should run update.php on all wikis if no old conf and extension requires update.php and is on all wikis", () => {
+		expect(
+			shouldRunUpdatePhp({
+				name: "MyExtension",
+				version: "1.2.3",
+				repo: "https://example.com/MyExtension",
+				config: "asdfasdf",
+				more_config: "asdf",
+				composer_merge: true,
+				git_submodules: true,
+				legacy_load: true,
+				update_php_on_change: "code-changes",
+			})
+		).toEqual(true);
+	});
+	it("should run update.php on specific wikis if no old conf and extension requires update.php and is only on specific wikis", () => {
 		expect(
 			shouldRunUpdatePhp({
 				name: "MyExtension",
@@ -297,7 +316,7 @@ describe("shouldRunUpdatePhp()", () => {
 				update_php_on_change: "code-changes",
 				wikis: ["onewiki", "twowiki"],
 			})
-		).toEqual(true);
+		).toEqual(["onewiki", "twowiki"]);
 	});
 	it("should not run update.php if no old conf and extension does not require update.php", () => {
 		expect(
@@ -435,25 +454,6 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should handle going from all-wikis (e.g. no wikis specified) to specifying wikis", () => {
-		expect(
-			shouldRunUpdatePhp(
-				{
-					name: "MyExtension",
-					version: "1.2.3",
-					repo: "https://example.com/MyExtension",
-					update_php_on_change: "code-changes",
-				},
-				{
-					name: "MyExtension",
-					version: "1.2.3",
-					repo: "https://example.com/MyExtension",
-					update_php_on_change: "code-changes",
-					wikis: ["twowiki", "onewiki"],
-				}
-			)
-		).toEqual(["twowiki", "onewiki"]);
-	});
 	it("should handle going from specifying wikis to all-wikis (not specifying wikis)", () => {
 		expect(
 			shouldRunUpdatePhp(
@@ -473,6 +473,188 @@ describe("shouldRunUpdatePhp()", () => {
 				}
 			)
 		).toEqual(false);
+	});
+	it("should only update specified wikis if the wiki's version updates", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["twowiki", "onewiki"],
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.4",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["twowiki", "onewiki"],
+				}
+			)
+		).toEqual(["twowiki", "onewiki"]);
+	});
+
+	// * Case 1: should not-update.php       if no-change AND all-wikis-before AND all-wikis-now
+	// * Case 2: should not-update.php       if no-change AND all-wikis-before AND select-wikis-now
+	// * Case 3: should update.php-all       if no-change AND select-wikis-before AND all-wikis-now [1]
+	// * Case 4: should update.php-new-wikis if no-change AND select-wikis-before AND select-wikis-now [2]
+	// * Changed extension:
+	// * Case 5: should update.php-all       if changed AND all-wikis-before AND all-wikis-now
+	// * Case 6: should update.php-now-wikis if changed AND all-wikis-before AND select-wikis-now
+	// * Case 7: should update.php-all       if changed AND select-wikis-before AND all-wikis-now
+	// * Case 8: should update.php-now-wikis if changed AND select-wikis-before AND select-wikis-now
+	it("should handle case 1: don't update.php if no-change AND all-wikis-before and all-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				}
+			)
+		).toEqual(false);
+	});
+	it("should handle case 2: don't update.php if no-change AND all-wikis-before and select-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "twowiki"],
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				}
+			)
+		).toEqual(false);
+	});
+	it("should handle case 3: update.php-for-all if no-change AND select-wikis-before and all-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "twowiki"],
+				}
+			)
+		).toEqual(true);
+	});
+	it("should handle case 4: update.php-for-NEW-wikis if no-change AND select-wikis-before and select-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "threewiki"],
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "twowiki"],
+				}
+			)
+		).toEqual(["twowiki"]);
+	});
+	it("should handle case 5: update.php-for-all if changed AND all-wikis-before and all-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.5",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				}
+			)
+		).toEqual(true);
+	});
+	it("should handle case 6: update.php-for-NOW-wikis if changed AND all-wikis-before and select-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.5",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "threewiki"],
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				}
+			)
+		).toEqual(["onewiki", "threewiki"]);
+	});
+	it("should handle case 7: update.php-for-all if changed AND select-wikis-before and all-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.5",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "threewiki"],
+				}
+			)
+		).toEqual(true);
+	});
+	it("should handle case 8: update.php-for-NOW-wikis if changed AND select-wikis-before and select-wikis-now", () => {
+		expect(
+			shouldRunUpdatePhp(
+				{
+					name: "MyExtension",
+					version: "1.2.5",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["twowiki", "threewiki", "fivewiki"],
+				},
+				{
+					name: "MyExtension",
+					version: "1.2.3",
+					repo: "https://example.com/MyExtension",
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "threewiki"],
+				}
+			)
+		).toEqual(["twowiki", "threewiki", "fivewiki"]);
 	});
 });
 
@@ -1132,7 +1314,14 @@ $configThing2 = 'two';
 });
 
 describe("doExtensions()", () => {
-	//FIXME
+	let asyncExecSpy: jest.SpyInstance;
+
+	beforeAll(() => {
+		makeReadFileSpy("{}");
+		makeWriteFileSpy({ throws: false });
+		asyncExecSpy = makeAsyncExecSpy({ throws: false });
+	});
+
 	it("should handle empty config and no prior install", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
@@ -1153,5 +1342,328 @@ describe("doExtensions()", () => {
 		});
 
 		expect(result).toEqual({ status: "NOCHANGE" });
+	});
+
+	it("should write first real config and inform to run update.php", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt.git",
+					version: "1.2.3",
+					config: "this line has changed",
+					more_config: "and so has this one",
+					composer_merge: true,
+					git_submodules: true,
+					legacy_load: true,
+					update_php_on_change: "code-changes",
+					wikis: ["onewiki", "twowiki"],
+				},
+				{
+					name: "MyExt2",
+					repo: "https://git.example.com/MyExt2.git",
+					version: "1.2.3",
+					config: "$configThing = 1;\n$configThing2 = 'two';",
+				},
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.3",
+				},
+			],
+			priorInstallation: [],
+		});
+
+		expect(result).toEqual({
+			status: "CHANGED",
+			runUpdatePhp: ["onewiki", "twowiki"],
+		});
+	});
+
+	it("should overwrite config and inform to run update.php", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt.git",
+					version: "1.2.4",
+					config: "this line has changed",
+					more_config: "and so has this one",
+					composer_merge: true,
+					git_submodules: true,
+					legacy_load: true,
+					update_php_on_change: "code-changes", // only required for version/repo changes
+					wikis: ["onewiki", "twowiki"],
+				},
+				{
+					name: "MyExt2",
+					repo: "https://git.example.com/MyExt2.git",
+					version: "1.2.3",
+					config: "$configThing = 1;\n$configThing2 = 'two';",
+				},
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.3",
+				},
+			],
+			priorInstallation: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt.git",
+					version: "1.2.3",
+					config: "this line has changed",
+					more_config: "and so has this one",
+					composer_merge: true,
+					git_submodules: true,
+					legacy_load: true,
+					update_php_on_change: "code-changes", // only required for version/repo changes
+					wikis: ["onewiki", "twowiki", "threewiki"],
+				},
+				{
+					name: "MyExt2",
+					repo: "https://git.example.com/MyExt2.git",
+					version: "1.2.3",
+					config: "$configThing = 1;\n$configThing2 = 'two';",
+				},
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.3",
+				},
+			],
+		});
+
+		expect(result).toEqual({
+			status: "CHANGED",
+			runUpdatePhp: ["onewiki", "twowiki"],
+		});
+	});
+
+	it("should overwrite config and inform to run update.php for added wiki when extension requires it", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt.git",
+					version: "1.2.3",
+					config: "this line has changed",
+					more_config: "and so has this one",
+					composer_merge: true,
+					git_submodules: true,
+					legacy_load: true,
+					update_php_on_change: "all",
+					wikis: ["onewiki", "twowiki"],
+				},
+				{
+					name: "MyExt2",
+					repo: "https://git.example.com/MyExt2.git",
+					version: "1.2.3",
+					config: "$configThing = 1;\n$configThing2 = 'two';",
+				},
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.3",
+				},
+			],
+			priorInstallation: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt.git",
+					version: "1.2.3",
+					config: "this line has changed",
+					more_config: "and so has this one",
+					composer_merge: true,
+					git_submodules: true,
+					legacy_load: true,
+					update_php_on_change: "all",
+					wikis: ["onewiki", "twowiki", "threewiki"],
+				},
+				{
+					name: "MyExt2",
+					repo: "https://git.example.com/MyExt2.git",
+					version: "1.2.3",
+					config: "$configThing = 1;\n$configThing2 = 'two';",
+				},
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.3",
+				},
+			],
+		});
+
+		expect(result).toEqual({ status: "CHANGED", runUpdatePhp: ["threewiki"] });
+	});
+
+	it("should overwrite config and merge requirements for which wikis to run update.php", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt.git",
+					version: "1.2.3",
+					config: "this line has changed",
+					more_config: "and so has this one",
+					composer_merge: true,
+					git_submodules: true,
+					legacy_load: true,
+					update_php_on_change: "all",
+					wikis: ["onewiki", "twowiki"],
+				},
+				{
+					name: "MyExt2",
+					repo: "https://git.example.com/MyExt2.git",
+					version: "1.2.3",
+					config: "$configThing = 1;\n$configThing2 = 'two';",
+					update_php_on_change: "all",
+					wikis: ["onewiki", "fourwiki"],
+				},
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.3",
+					update_php_on_change: "all",
+					wikis: ["twowiki", "sixwiki"],
+				},
+			],
+			priorInstallation: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt.git",
+					version: "1.2.3",
+					config: "this line has changed",
+					more_config: "and so has this one",
+					composer_merge: true,
+					git_submodules: true,
+					legacy_load: true,
+					update_php_on_change: "all",
+					wikis: ["onewiki", "twowiki", "threewiki"],
+				},
+				{
+					name: "MyExt2",
+					repo: "https://git.example.com/MyExt2.git",
+					version: "1.2.3",
+					config: "$configThing = 1;\n$configThing2 = 'two';",
+					update_php_on_change: "all",
+					wikis: ["onewiki", "fivewiki"],
+				},
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.4",
+					update_php_on_change: "all",
+					wikis: ["twowiki", "sixwiki"],
+				},
+			],
+		});
+
+		expect(result).toEqual({
+			status: "CHANGED",
+			runUpdatePhp: ["threewiki", "fivewiki", "twowiki", "sixwiki"],
+		});
+	});
+
+	it("should overwrite config and run update.php on all wikis", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.3",
+					update_php_on_change: "all",
+				},
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt",
+					version: "5.5.5",
+				},
+			],
+			priorInstallation: [
+				{
+					name: "ComposerExt",
+					composer: "group/ComposerExt",
+					version: "1.2.4",
+					update_php_on_change: "all",
+				},
+			],
+		});
+
+		expect(result).toEqual({
+			status: "CHANGED",
+			runUpdatePhp: true,
+		});
+	});
+
+	it("should handle skins", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "SomeSkin",
+					repo: "https://git.example.com/SomeSkin",
+					version: "1.2.6",
+					skin: true,
+					update_php_on_change: "all",
+				},
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt",
+					version: "5.5.5",
+				},
+			],
+			priorInstallation: [
+				{
+					name: "SomeSkin",
+					repo: "https://git.example.com/SomeSkin",
+					version: "1.2.3",
+					skin: true,
+					update_php_on_change: "all",
+				},
+			],
+		});
+
+		expect(result).toEqual({
+			status: "CHANGED",
+			runUpdatePhp: true,
+		});
+	});
+
+	it("should error if unable to run git commands", async () => {
+		asyncExecSpy.mockRestore();
+		asyncExecSpy.mockClear();
+
+		asyncExecSpy = makeAsyncExecSpy({ throws: true });
+		const consoleErrorSpy = makeConsoleErrorSpy();
+
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt",
+					version: "5.5.5",
+				},
+			],
+			priorInstallation: [],
+		});
+
+		expect(result).toEqual({
+			status: "ERROR",
+		});
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
 });
