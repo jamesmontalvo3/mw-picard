@@ -220,11 +220,9 @@ export const doComposerExtensions = async ({
 			);
 		}
 	}
-	console.error("wtf1", composerJson);
 	const composerJsonPath = path.join(mediawikiPath, "composer.local.json");
 	try {
 		const currentFile = await fsp.readFile(composerJsonPath, "utf-8");
-		console.error("wtf", currentFile);
 		const current = JSON.parse(currentFile);
 		if (deepEqual(composerJson, current)) {
 			return true;
@@ -236,6 +234,7 @@ export const doComposerExtensions = async ({
 	const json = composerLocalJsonify(composerJson);
 
 	try {
+		// console.log("what is it", { fsp, writeFile: fsp.writeFile });
 		fsp.writeFile(composerJsonPath, json);
 	} catch (err) {
 		return false;
