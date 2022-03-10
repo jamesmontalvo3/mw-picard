@@ -4,7 +4,7 @@ import fs, { promises as fsp } from "fs";
 import path from "path";
 import * as asyncExecModule from "./asyncExec";
 import * as asyncRimrafModule from "./asyncRimraf";
-import {
+import doExtensions, {
 	ComposerJson,
 	composerLocalJsonify,
 	createExtensionSettings,
@@ -1131,11 +1131,27 @@ $configThing2 = 'two';
 	});
 });
 
-/*
-
 describe("doExtensions()", () => {
-	it("should work", () => { //FIXME
-		expect(true).toEqual(false);
+	//FIXME
+	it("should handle empty config and no prior install", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [],
+			priorInstallation: false,
+		});
+
+		expect(result).toEqual({ status: "CHANGED", runUpdatePhp: false });
+	});
+
+	it("should handle empty config and empty prior install", async () => {
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [],
+			priorInstallation: [],
+		});
+
+		expect(result).toEqual({ status: "NOCHANGE" });
 	});
 });
-*/
