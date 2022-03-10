@@ -36,16 +36,6 @@ program
 		"Path to MediaWiki directory (in which extensions/ and skins/ typically reside)",
 		false
 	)
-	.option(
-		"--extensions <directory>",
-		"Path to extensions/ directory if not within MediaWiki directory",
-		false
-	)
-	.option(
-		"--skins <directory>",
-		"Path to skins/ directory if not within MediaWiki directory",
-		false
-	)
 	.action(async (options: GetExtOptions) => {
 		const { baseline, specifier, mediawiki } = options;
 
@@ -54,16 +44,11 @@ program
 			return;
 		}
 
-		const extensions = options.extensions || path.join(mediawiki, "extensions");
-		const skins = options.skins || path.join(mediawiki, "skins");
-
 		const result = await processExtensions({
 			baseline,
 			specifier,
 			mediawiki,
 			composerCmd: "/usr/bin/composer",
-			extensions,
-			skins,
 		});
 
 		const jsonResult = JSON.stringify(result, null, 2);

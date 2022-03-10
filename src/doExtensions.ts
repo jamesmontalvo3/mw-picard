@@ -179,7 +179,7 @@ export const makeGitRight = async ({
 	return runCommand(cmd);
 };
 
-type ComposerJson = {
+export type ComposerJson = {
 	require: Record<string, string>;
 	extra: {
 		"merge-plugin": {
@@ -215,8 +215,9 @@ export const doComposerExtensions = async ({
 			composerJson.require[ext.composer] = ext.version;
 		}
 		if (ext.composer_merge) {
+			const dir = ext.skin ? "skins" : "extensions";
 			composerJson.extra["merge-plugin"].include.push(
-				`extensions/${ext.name}/composer.json`
+				`${dir}/${ext.name}/composer.json`
 			);
 		}
 	}
@@ -227,15 +228,12 @@ export const doComposerExtensions = async ({
 		if (deepEqual(composerJson, current)) {
 			return true;
 		}
-	} catch (err) {
-		console.error("should not have happened", err); // FIXME remove
-	}
+	} catch (err) {}
 
 	const json = composerLocalJsonify(composerJson);
 
 	try {
-		// console.log("what is it", { fsp, writeFile: fsp.writeFile });
-		fsp.writeFile(composerJsonPath, json);
+		await fsp.writeFile(composerJsonPath, json);
 	} catch (err) {
 		return false;
 	}
@@ -285,20 +283,19 @@ export type DoExtensionsResult =
 	  };
 
 const doExtensions = async ({
-	extensionsPath,
-	skinsPath,
 	mediawikiPath,
 	composerCmd,
 	extensionsConfig,
 	priorInstallation,
 }: {
-	extensionsPath: string;
-	skinsPath: string;
 	mediawikiPath: string;
 	composerCmd: string;
 	extensionsConfig: ExtensionConfig[];
 	priorInstallation: ExtensionConfig[] | false;
 }): Promise<DoExtensionsResult> => {
+	const skinsPath = path.join(mediawikiPath, "skins");
+	const extensionsPath = path.join(mediawikiPath, "extensions");
+
 	const changesMade = !deepEqual(extensionsConfig, priorInstallation);
 	if (!changesMade) {
 		return { status: "NOCHANGE" };

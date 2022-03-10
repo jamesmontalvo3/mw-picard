@@ -1,4 +1,3 @@
-import mockFS from "mock-fs";
 import fs, { promises as fsp } from "fs";
 // fixme in new commit replace `it("should ` with ``
 // fixme use mock-fs everywhere
@@ -6,6 +5,7 @@ import path from "path";
 import * as asyncExecModule from "./asyncExec";
 import * as asyncRimrafModule from "./asyncRimraf";
 import {
+	ComposerJson,
 	composerLocalJsonify,
 	createExtensionSettings,
 	createLoadCommand,
@@ -38,6 +38,24 @@ const makeAsyncExecSpy = ({ throws }: { throws: boolean }) => {
 				return "Mock run of command " + cmd;
 		  };
 	return jest.spyOn(asyncExecModule, "asyncExec").mockImplementation(mock);
+};
+
+const makeReadFileSpy = (result: string | false): jest.SpyInstance => {
+	const mock: any = result // eslint-disable-line @typescript-eslint/no-explicit-any
+		? () => Promise.resolve(result)
+		: () => Promise.reject("testing reject readFile");
+	return jest.spyOn(fs.promises, "readFile").mockImplementation(mock);
+};
+
+const makeWriteFileSpy = ({
+	throws,
+}: {
+	throws: boolean;
+}): jest.SpyInstance => {
+	const mock: any = throws // eslint-disable-line @typescript-eslint/no-explicit-any
+		? () => Promise.reject("testing reject writeFile")
+		: () => Promise.resolve();
+	return jest.spyOn(fs.promises, "writeFile").mockImplementation(mock);
 };
 
 describe("shouldUpdateExtension()", () => {
@@ -878,10 +896,11 @@ describe("doComposerExtensions()", () => {
 	// asyncExec - success and failure to run command
 
 	afterEach(() => {
-		mockFS.restore();
+		jest.clearAllMocks();
+		jest.restoreAllMocks();
 	});
 
-	const baselineComposerLocalJson = {
+	const baselineComposerLocalJson: ComposerJson = {
 		require: {},
 		extra: {
 			"merge-plugin": {
@@ -896,12 +915,10 @@ describe("doComposerExtensions()", () => {
 			"composer.local.json"
 		);
 
-		mockFS({
-			[cLocalJsonPath]: composerLocalJsonify(baselineComposerLocalJson),
-		});
-
-		const readFileSpy = jest.spyOn(fs.promises, "readFile");
-		const writeFileSpy = jest.spyOn(fs.promises, "writeFile");
+		const readFileSpy = makeReadFileSpy(
+			composerLocalJsonify(baselineComposerLocalJson)
+		);
+		const writeFileSpy = makeWriteFileSpy({ throws: false });
 		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
 
 		expect(
@@ -922,12 +939,8 @@ describe("doComposerExtensions()", () => {
 			"composer.local.json"
 		);
 
-		mockFS({
-			[cLocalJsonPath]: "{}",
-		});
-
-		const readFileSpy = jest.spyOn(fs.promises, "readFile");
-		const writeFileSpy = jest.spyOn(fs.promises, "writeFile");
+		const readFileSpy = makeReadFileSpy("{}"); // initial composer.local.json is empty obj
+		const writeFileSpy = makeWriteFileSpy({ throws: false });
 		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
 
 		expect(
@@ -947,28 +960,23 @@ describe("doComposerExtensions()", () => {
 		);
 	});
 
-	it("should write baseline composer.local.json if no file", async () => {
-		const cleanMediawikiPath = path.join("/path/to/mediawiki");
+	it("should write baseline composer.local.json if no preexisting file", async () => {
+		const readFileSpy = makeReadFileSpy(false);
+		const writeFileSpy = makeWriteFileSpy({ throws: false });
+		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
+
 		const cLocalJsonPath = path.join(
 			"/path/to/mediawiki",
 			"composer.local.json"
 		);
 
-		mockFS({
-			[cleanMediawikiPath]: mockFS.directory(),
+		const result = await doComposerExtensions({
+			mediawikiPath: "/path/to/mediawiki",
+			composerCmd: "/path/to/composer",
+			extensions: [],
 		});
 
-		const readFileSpy = jest.spyOn(fs.promises, "readFile");
-		const writeFileSpy = jest.spyOn(fs.promises, "writeFile");
-		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
-
-		expect(
-			await doComposerExtensions({
-				mediawikiPath: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
-				extensions: [],
-			})
-		).toEqual(true);
+		expect(result).toEqual(true);
 		expect(readFileSpy).toHaveBeenCalledWith(cLocalJsonPath, "utf-8");
 		expect(writeFileSpy).toHaveBeenCalledWith(
 			cLocalJsonPath,
@@ -979,34 +987,21 @@ describe("doComposerExtensions()", () => {
 		);
 	});
 
-	it("should return false if unable to access directory", async () => {
+	it("should return false if unable to write file", async () => {
 		const cleanMediawikiPath = path.join("/path/to/mediawiki");
 		const cLocalJsonPath = path.join(cleanMediawikiPath, "composer.local.json");
-		mockFS({
-			[cleanMediawikiPath]: mockFS.directory({
-				mode: 0o0000, // no file permissions
-				uid: 12345,
-				items: {
-					"composer.local.json": mockFS.file({
-						content: '{ "some content": "you cannot read" }',
-						mode: 0o000,
-						uid: 12345,
-					}),
-				},
-			}),
-		});
-		const readFileSpy = jest.spyOn(fs.promises, "readFile");
-		const writeFileSpy = jest
-			.spyOn(fs.promises, "writeFile")
-			.mockImplementation((() => Promise.reject()) as any);
+
+		const readFileSpy = makeReadFileSpy("{}");
+		const writeFileSpy = makeWriteFileSpy({ throws: true });
+
 		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
 
 		const result = await doComposerExtensions({
-			mediawikiPath: "/path/to/somewhere/else",
+			mediawikiPath: "/path/to/mediawiki",
 			composerCmd: "/path/to/composer",
 			extensions: [],
 		});
-		console.log("result", JSON.stringify(mockFS.getMockRoot(), null, 2));
+
 		expect(result).toEqual(false);
 		expect(readFileSpy).toHaveBeenCalledWith(cLocalJsonPath, "utf-8");
 		expect(writeFileSpy).toHaveBeenCalledWith(
@@ -1014,6 +1009,59 @@ describe("doComposerExtensions()", () => {
 			composerLocalJsonify(baselineComposerLocalJson)
 		);
 		expect(asyncExecSpy).not.toHaveBeenCalled();
+	});
+
+	it("should add composer and composer-merge extensions", async () => {
+		const cLocalJsonPath = path.join(
+			"/path/to/mediawiki",
+			"composer.local.json"
+		);
+
+		const composerLocalJson = cloneDeep(baselineComposerLocalJson);
+		composerLocalJson.require["somegroup/someext"] = "1.2.3";
+		composerLocalJson.extra["merge-plugin"].include.push(
+			"extensions/AnotherExt/composer.json",
+			"skins/SomeSkin/composer.json"
+		);
+
+		const readFileSpy = makeReadFileSpy("{}"); // initial composer.local.json is empty obj
+		const writeFileSpy = makeWriteFileSpy({ throws: false });
+		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
+
+		expect(
+			await doComposerExtensions({
+				mediawikiPath: "/path/to/mediawiki",
+				composerCmd: "/path/to/composer",
+				extensions: [
+					{
+						name: "someext",
+						composer: "somegroup/someext",
+						version: "1.2.3",
+					},
+					{
+						name: "AnotherExt",
+						repo: "https://git.example.com/AnotherExt.git",
+						version: "3.4.5",
+						composer_merge: true,
+					},
+					{
+						name: "SomeSkin",
+						repo: "https://git.example.com/SomeSkin.git",
+						version: "3.4.5",
+						composer_merge: true,
+						skin: true,
+					},
+				],
+			})
+		).toEqual(true);
+		expect(readFileSpy).toHaveBeenCalledWith(cLocalJsonPath, "utf-8");
+		expect(writeFileSpy).toHaveBeenCalledWith(
+			cLocalJsonPath,
+			composerLocalJsonify(composerLocalJson)
+		);
+		expect(asyncExecSpy).toHaveBeenCalledWith(
+			"cd /path/to/mediawiki && /path/to/composer install && /path/to/composer update"
+		);
 	});
 });
 
