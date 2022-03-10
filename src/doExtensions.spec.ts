@@ -10,6 +10,7 @@ import {
 	createExtensionSettings,
 	createLoadCommand,
 	doComposerExtensions,
+	doExtensionSettings,
 	gitCheckoutCommand,
 	isGitRepo,
 	makeGitRight,
@@ -49,12 +50,17 @@ const makeReadFileSpy = (result: string | false): jest.SpyInstance => {
 
 const makeWriteFileSpy = ({
 	throws,
+	writeTo = { written: "" },
 }: {
 	throws: boolean;
+	writeTo?: { written: string };
 }): jest.SpyInstance => {
 	const mock: any = throws // eslint-disable-line @typescript-eslint/no-explicit-any
 		? () => Promise.reject("testing reject writeFile")
-		: () => Promise.resolve();
+		: (filepath: string, content: string | Buffer) => {
+				writeTo.written = content.toString();
+				return Promise.resolve();
+		  };
 	return jest.spyOn(fs.promises, "writeFile").mockImplementation(mock);
 };
 
@@ -474,52 +480,51 @@ describe("shouldRunUpdatePhp()", () => {
 describe("createLoadCommand()", () => {
 	it("should return empty string for composer extensions", () => {
 		expect(
-			createLoadCommand(
-				{
-					name: "MyExt",
-					composer: "group/ext",
-					version: "1.2.3.",
-				},
-				"/path/to/extension"
-			)
+			createLoadCommand({
+				name: "MyExt",
+				composer: "group/ext",
+				version: "1.2.3.",
+			})
 		).toEqual("");
 	});
-	it("should return require_once for legacy load", () => {
+	it("should return require_once for legacy loaded extension", () => {
 		expect(
-			createLoadCommand(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3.",
-					legacy_load: true,
-				},
-				"/path/to/extension"
-			)
-		).toEqual("require_once '/path/to/extension';\n");
+			createLoadCommand({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3.",
+				legacy_load: true,
+			})
+		).toEqual("require_once '$IP/extensions/MyExt/MyExt.php';\n");
+	});
+	it("should return require_once for legacy loaded skin", () => {
+		expect(
+			createLoadCommand({
+				name: "MySkin",
+				repo: "https://git.example.com",
+				version: "1.2.3.",
+				legacy_load: true,
+				skin: true,
+			})
+		).toEqual("require_once '$IP/skins/MySkin/MySkin.php';\n");
 	});
 	it("should use extension loader for normal extensions", () => {
 		expect(
-			createLoadCommand(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3.",
-				},
-				"/path/to/extension"
-			)
+			createLoadCommand({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3.",
+			})
 		).toEqual('wfLoadExtension( "MyExt" );\n');
 	});
 	it("should use extension loader for normal skins", () => {
 		expect(
-			createLoadCommand(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3.",
-					skin: true,
-				},
-				"/path/to/extension"
-			)
+			createLoadCommand({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3.",
+				skin: true,
+			})
 		).toEqual('wfLoadSkin( "MyExt" );\n');
 	});
 });
@@ -527,16 +532,13 @@ describe("createLoadCommand()", () => {
 describe("createExtensionSettings()", () => {
 	it("should produce settings for normal extension", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3",
-					config: "$wgMyExtVar = 42;",
-					more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3",
+				config: "$wgMyExtVar = 42;",
+				more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
 wfLoadExtension( "MyExt" );
@@ -550,17 +552,14 @@ $wgMyExtVar3 = [];
 
 	it("should produce settings for normal skin", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3",
-					skin: true,
-					config: "$wgMyExtVar = 42;",
-					more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3",
+				skin: true,
+				config: "$wgMyExtVar = 42;",
+				more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
 wfLoadSkin( "MyExt" );
@@ -574,16 +573,13 @@ $wgMyExtVar3 = [];
 
 	it("should produce settings for composer extension", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					composer: "group/extension",
-					version: "1.2.3",
-					config: "$wgMyExtVar = 42;",
-					more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				composer: "group/extension",
+				version: "1.2.3",
+				config: "$wgMyExtVar = 42;",
+				more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
 $wgMyExtVar = 42;
@@ -596,20 +592,17 @@ $wgMyExtVar3 = [];
 
 	it("should produce settings for legacy-load extension", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					legacy_load: true,
-					version: "1.2.3",
-					config: "$wgMyExtVar = 42;",
-					more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				legacy_load: true,
+				version: "1.2.3",
+				config: "$wgMyExtVar = 42;",
+				more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
-require_once '/path/to/ext';
+require_once '$IP/extensions/MyExt/MyExt.php';
 $wgMyExtVar = 42;
 $wgMyExtVar2 = 'test';
 $wgMyExtVar3 = [];
@@ -620,15 +613,12 @@ $wgMyExtVar3 = [];
 
 	it("should produce settings without config", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3",
-					more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3",
+				more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
 wfLoadExtension( "MyExt" );
@@ -641,15 +631,12 @@ $wgMyExtVar3 = [];
 
 	it("should produce settings without more_config", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3",
-					config: "$wgMyExtVar = 42;",
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3",
+				config: "$wgMyExtVar = 42;",
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
 wfLoadExtension( "MyExt" );
@@ -661,14 +648,11 @@ $wgMyExtVar = 42;
 
 	it("should produce settings without config or more_config", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3",
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3",
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
 wfLoadExtension( "MyExt" );
@@ -679,17 +663,14 @@ wfLoadExtension( "MyExt" );
 
 	it("should produce settings for wiki-specific extensions", () => {
 		expect(
-			createExtensionSettings(
-				{
-					name: "MyExt",
-					repo: "https://git.example.com",
-					version: "1.2.3",
-					config: "$wgMyExtVar = 42;",
-					more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
-					wikis: ["onewiki", "twowiki"],
-				},
-				"/path/to/ext"
-			)
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3",
+				config: "$wgMyExtVar = 42;",
+				more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
+				wikis: ["onewiki", "twowiki"],
+			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
 if ( in_array( $wikiId, ['onewiki', 'twowiki'] ) ) {
@@ -1065,13 +1046,92 @@ describe("doComposerExtensions()", () => {
 	});
 });
 
-/*
-
 describe("doExtensionSettings()", () => {
-	it("should work", () => { // FIXME
-		expect(true).toEqual(false);
+	afterEach(() => {
+		jest.clearAllMocks();
+		jest.restoreAllMocks();
+	});
+
+	it("should write ExtensionSettings.php", async () => {
+		const writeTo = { written: "" };
+		makeWriteFileSpy({ throws: false, writeTo });
+		expect(
+			await doExtensionSettings({
+				extensionsPath: "/path/to/mw/extensions",
+				extensionsConfig: [
+					{
+						name: "MyExt",
+						repo: "https://git.example.com/MyExt.git",
+						version: "1.2.3",
+					},
+					{
+						name: "MyExt2",
+						repo: "https://git.example.com/MyExt2.git",
+						version: "1.2.3",
+						config: "$configThing = 1;\n$configThing2 = 'two';",
+					},
+					{
+						name: "ComposerExt",
+						composer: "group/ComposerExt",
+						version: "1.2.3",
+					},
+				],
+			})
+		).toEqual(true);
+		expect(writeTo.written).toEqual(`<?php
+
+/**
+ * This file is automatically generated by mw-picard
+ */
+
+/**** MyExt @ 1.2.3 ****/
+wfLoadExtension( "MyExt" );
+
+/**** MyExt2 @ 1.2.3 ****/
+wfLoadExtension( "MyExt2" );
+$configThing = 1;
+$configThing2 = 'two';
+
+/**** ComposerExt @ 1.2.3 ****/
+
+`);
+	});
+
+	it("should return false and console.error if unable to write ExtensionSettings.php", async () => {
+		const writeFileSpy = makeWriteFileSpy({ throws: true });
+		const consoleErrorSpy = jest
+			.spyOn(console, "error")
+			.mockImplementation(jest.fn());
+
+		expect(
+			await doExtensionSettings({
+				extensionsPath: "/path/to/mw/extensions",
+				extensionsConfig: [
+					{
+						name: "MyExt",
+						repo: "https://git.example.com/MyExt.git",
+						version: "1.2.3",
+					},
+					{
+						name: "MyExt2",
+						repo: "https://git.example.com/MyExt2.git",
+						version: "1.2.3",
+						config: "$configThing = 1;\n$configThing2 = 'two';",
+					},
+					{
+						name: "ComposerExt",
+						composer: "group/ComposerExt",
+						version: "1.2.3",
+					},
+				],
+			})
+		).toEqual(false);
+		expect(writeFileSpy).toHaveBeenCalledTimes(1);
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
 });
+
+/*
 
 describe("doExtensions()", () => {
 	it("should work", () => { //FIXME
