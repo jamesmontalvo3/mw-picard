@@ -1,9 +1,7 @@
 import fs, { promises as fsp } from "fs";
 // fixme in new commit replace `it("should ` with ``
-// fixme use mock-fs everywhere
 import path from "path";
 import * as asyncExecModule from "./asyncExec";
-import * as asyncRimrafModule from "./asyncRimraf";
 import doExtensions, {
 	ComposerJson,
 	composerLocalJsonify,
@@ -19,55 +17,13 @@ import doExtensions, {
 } from "./doExtensions";
 import cloneDeep from "lodash/cloneDeep";
 import packageJson from "../package.json";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const makeAsyncRimrafSpy = (mock: (...args: any) => any) => {
-	return (
-		jest
-			.spyOn(asyncRimrafModule, "asyncRimraf")
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			.mockImplementation(mock)
-	);
-};
-
-const makeAsyncExecSpy = ({ throws }: { throws: boolean }) => {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const mock: any = throws
-		? async (cmd: string) => {
-				throw new Error("Testing intensional throw for " + cmd);
-		  }
-		: async (cmd: string) => {
-				return "Mock run of command " + cmd;
-		  };
-	return jest.spyOn(asyncExecModule, "asyncExec").mockImplementation(mock);
-};
-
-const makeReadFileSpy = (result: string | false): jest.SpyInstance => {
-	const mock: any = result // eslint-disable-line @typescript-eslint/no-explicit-any
-		? () => Promise.resolve(result)
-		: () => Promise.reject("testing reject readFile");
-	return jest.spyOn(fs.promises, "readFile").mockImplementation(mock);
-};
-
-const makeWriteFileSpy = ({
-	throws,
-	writeTo = { written: "" },
-}: {
-	throws: boolean;
-	writeTo?: { written: string };
-}): jest.SpyInstance => {
-	const mock: any = throws // eslint-disable-line @typescript-eslint/no-explicit-any
-		? () => Promise.reject("testing reject writeFile")
-		: (filepath: string, content: string | Buffer) => {
-				writeTo.written = content.toString();
-				return Promise.resolve();
-		  };
-	return jest.spyOn(fs.promises, "writeFile").mockImplementation(mock);
-};
-
-const makeConsoleErrorSpy = () => {
-	return jest.spyOn(console, "error").mockImplementation(jest.fn());
-};
+import {
+	makeAsyncRimrafSpy,
+	makeAsyncExecSpy,
+	makeReadFileSpy,
+	makeWriteFileSpy,
+	makeConsoleErrorSpy,
+} from "./test-utils";
 
 describe("shouldUpdateExtension()", () => {
 	it("should update extension if props change", () => {
@@ -496,6 +452,8 @@ describe("shouldRunUpdatePhp()", () => {
 		).toEqual(["twowiki", "onewiki"]);
 	});
 
+	// Ref the docs for shouldRunUpdatePhp() for what the following comments mean
+	// Unchanged extension:
 	// Case 1: should not-update.php       if no-change AND all-wikis-before AND all-wikis-now
 	// Case 2: should not-update.php       if no-change AND all-wikis-before AND select-wikis-now
 	// Case 3: should update.php-all       if no-change AND select-wikis-before AND all-wikis-now

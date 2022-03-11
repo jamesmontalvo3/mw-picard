@@ -1,5 +1,7 @@
 import getExtensionConfig, {
 	isExtensionConfig,
+	isExtensionConfigArray,
+	isPartialExtensionConfigArray,
 	mergeExtensionConfigs,
 } from "./getExtensionConfig";
 
@@ -38,6 +40,90 @@ describe("isExtensionConfig()", () => {
 				evenReturnsTrueWithBogusExtraProps: "asdf",
 			})
 		).toBe(true);
+	});
+});
+
+describe("isExtensionConfigArray()", () => {
+	it("should return false for non-arrays", () => {
+		expect(isExtensionConfigArray({})).toEqual(false);
+		expect(isExtensionConfigArray("stuff")).toEqual(false);
+		expect(isExtensionConfigArray(42)).toEqual(false);
+	});
+	it("should return false if any array element fails isExtensionConfig()", () => {
+		expect(isExtensionConfigArray([{}, { name: "MyExt" }])).toEqual(false);
+		expect(
+			isExtensionConfigArray([{ name: "MyExt" }, "not an object"])
+		).toEqual(false);
+		expect(isExtensionConfigArray([null])).toEqual(false);
+		expect(
+			isExtensionConfigArray([
+				{ name: "MyExt", version: "1.2.3", repo: "https://example.com" },
+				{ name: "MyExt", version: "1.2.3" },
+			])
+		).toEqual(false);
+		expect(
+			isExtensionConfigArray([
+				{ name: "MyExt", version: "1.2.3", repo: "https://example.com" },
+				{ name: "MyExt", repo: "https://example.com" },
+			])
+		).toEqual(false);
+		expect(
+			isExtensionConfigArray([
+				{ name: "MyExt", version: "1.2.3", repo: "https://example.com" },
+				{ version: "1.2.3", repo: "https://example.com" },
+			])
+		).toEqual(false);
+		expect(
+			isExtensionConfigArray([
+				{ name: "MyExt", version: "1.2.3", composer: "group/ext" },
+				{ name: "MyExt", version: "1.2.3" },
+			])
+		).toEqual(false);
+		expect(
+			isExtensionConfigArray([
+				{ name: "MyExt", version: "1.2.3", composer: "group/ext" },
+				{ name: "MyExt", composer: "group/ext" },
+			])
+		).toEqual(false);
+		expect(
+			isExtensionConfigArray([
+				{ name: "MyExt", version: "1.2.3", composer: "group/ext" },
+				{ version: "1.2.3", composer: "group/ext" },
+			])
+		).toEqual(false);
+	});
+	it("should return true for valid input", () => {
+		expect(
+			isExtensionConfigArray([
+				{ name: "Ext2", version: "1.2.3", repo: "https://example.com" },
+				{ name: "Ext2", version: "1.2.3", composer: "group/ext" },
+			])
+		).toEqual(true);
+	});
+});
+
+describe("isPartialExtensionConfigArray()", () => {
+	it("should return false for non-arrays", () => {
+		expect(isPartialExtensionConfigArray({})).toEqual(false);
+		expect(isPartialExtensionConfigArray("stuff")).toEqual(false);
+		expect(isPartialExtensionConfigArray(42)).toEqual(false);
+	});
+	it("should return false if any array element fails isPartialExtensionConfig()", () => {
+		expect(isPartialExtensionConfigArray([{}, { name: "MyExt" }])).toEqual(
+			false
+		);
+		expect(
+			isPartialExtensionConfigArray([{ name: "MyExt" }, "not an object"])
+		).toEqual(false);
+		expect(isPartialExtensionConfigArray([null])).toEqual(false);
+	});
+	it("should return true for valid input", () => {
+		expect(
+			isPartialExtensionConfigArray([
+				{ name: "MyExt" },
+				{ name: "Ext2", version: "1.2.3", repo: "https://example.com" },
+			])
+		).toEqual(true);
 	});
 });
 
