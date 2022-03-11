@@ -1,4 +1,3 @@
-import path from "path";
 import { Command } from "commander";
 import packageJSON from "../package.json";
 import processExtensions from "./processExtensions";
