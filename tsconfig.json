@@ -15,7 +15,8 @@
 		"resolveJsonModule": true,
 		"forceConsistentCasingInFileNames": true,
 
-		"outDir": "./build"
+		"rootDir": "./src",
+		"outDir": "./dist"
 	},
 	"include": ["src"]
 }
