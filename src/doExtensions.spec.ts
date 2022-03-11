@@ -1314,12 +1314,10 @@ $configThing2 = 'two';
 });
 
 describe("doExtensions()", () => {
-	let asyncExecSpy: jest.SpyInstance;
-
 	beforeAll(() => {
 		makeReadFileSpy("{}");
 		makeWriteFileSpy({ throws: false });
-		asyncExecSpy = makeAsyncExecSpy({ throws: false });
+		makeAsyncExecSpy({ throws: false });
 	});
 
 	it("should handle empty config and no prior install", async () => {
@@ -1640,12 +1638,13 @@ describe("doExtensions()", () => {
 			runUpdatePhp: true,
 		});
 	});
+});
 
+describe("doExtensions() errors", () => {
 	it("should error if unable to run git commands", async () => {
-		asyncExecSpy.mockRestore();
-		asyncExecSpy.mockClear();
-
-		asyncExecSpy = makeAsyncExecSpy({ throws: true });
+		makeReadFileSpy("{}");
+		makeWriteFileSpy({ throws: false });
+		makeAsyncExecSpy({ throws: true });
 		const consoleErrorSpy = makeConsoleErrorSpy();
 
 		const result = await doExtensions({
@@ -1666,4 +1665,41 @@ describe("doExtensions()", () => {
 		});
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
+
+	it("should error if fails to write ExtensionSettings.php", async () => {
+		makeReadFileSpy("{}");
+		makeAsyncExecSpy({ throws: true });
+		const consoleErrorSpy = makeConsoleErrorSpy();
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const mockWriteFile: any = async (filepath: string) => {
+			if (filepath.includes("ExtensionSettings.php")) {
+				return Promise.reject("testing reject writeFile");
+			}
+
+			return Promise.resolve();
+		};
+		jest.spyOn(fs.promises, "writeFile").mockImplementation(mockWriteFile);
+
+		const result = await doExtensions({
+			mediawikiPath: "/path/to/mw",
+			composerCmd: "/path/to/composer",
+			extensionsConfig: [
+				{
+					name: "MyExt",
+					repo: "https://git.example.com/MyExt",
+					version: "5.5.5",
+				},
+			],
+			priorInstallation: [],
+		});
+
+		expect(result).toEqual({
+			status: "ERROR",
+		});
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+	});
+
+	// fail on writing ExtensionSettings
+	// fail on command `cd ${mediawikiPath} && ${composerCmd} install && ${composerCmd} update`
 });

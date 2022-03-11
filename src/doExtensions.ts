@@ -376,13 +376,25 @@ const doExtensions = async ({
 	}
 
 	// FIXME should say "written by mw-picard v1.0.0"
-	await doExtensionSettings({ extensionsPath, extensionsConfig });
+	const extSettingsSuccess = await doExtensionSettings({
+		extensionsPath,
+		extensionsConfig,
+	});
+
+	if (!extSettingsSuccess) {
+		return { status: "ERROR" };
+	}
+
 	// FIXME const success = ... for each of these
-	await doComposerExtensions({
+	const composerSuccess = await doComposerExtensions({
 		mediawikiPath,
 		composerCmd,
 		extensions: extensionsConfig,
 	});
+
+	if (!composerSuccess) {
+		return { status: "ERROR" };
+	}
 
 	return {
 		status: "CHANGED",
