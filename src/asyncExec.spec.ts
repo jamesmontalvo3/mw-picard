@@ -1,7 +1,7 @@
 import { asyncExec, ExecError } from "./asyncExec";
 
 describe("asyncExec()", () => {
-	it("should reject/throw for a bad command 2222222222", async () => {
+	test("reject/throw for a bad command 2222222222", async () => {
 		let result: {
 			stdout?: string;
 			stderr?: string;
@@ -37,7 +37,7 @@ describe("asyncExec()", () => {
 		expect(result.error.stderr.length).toBeGreaterThan(1);
 	});
 
-	it("should resolve for a valid command", async () => {
+	test("resolve for a valid command", async () => {
 		const { stdout, stderr } = await asyncExec("dir"); // `dir` is valid DOS and Bash command
 
 		expect(typeof stdout === "string").toEqual(true);

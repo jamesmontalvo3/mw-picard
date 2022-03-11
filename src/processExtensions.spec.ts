@@ -10,7 +10,7 @@ import {
 } from "./test-utils";
 
 describe("processExtensions()", () => {
-	it("should error when loading YAML throws", async () => {
+	test("error when loading YAML throws", async () => {
 		makeReadFileSpy(false);
 		expect(
 			await processExtensions({
@@ -22,7 +22,7 @@ describe("processExtensions()", () => {
 		).toEqual({ status: "ERROR" });
 	});
 
-	it("should error when baseline isn't ExtensionConfig[]", async () => {
+	test("error when baseline isn't ExtensionConfig[]", async () => {
 		makeReadFileSpy({
 			"/path/to/baseline.yml": `[{ "name": "MyExt" }]`, // invalid baseline
 			"/path/to/specifier.yml": `[{ "name": "MyExt" }]`, // valid specifier
@@ -38,7 +38,7 @@ describe("processExtensions()", () => {
 		).toEqual({ status: "ERROR" });
 	});
 
-	it("should error when baseline isn't PartialExtensionConfig[]", async () => {
+	test("error when baseline isn't PartialExtensionConfig[]", async () => {
 		makeReadFileSpy({
 			"/path/to/baseline.yml": `[{ "name": "MyExt", "repo": "https://git.example.com", "version": "1.2.3" }]`, // valid baseline
 			"/path/to/specifier.yml": `[{ "thing": "MyExt" }]`, // invalid specifier
@@ -54,7 +54,7 @@ describe("processExtensions()", () => {
 		).toEqual({ status: "ERROR" });
 	});
 
-	it("should indicate changed when a baseline+specifier are valid with no prior install", async () => {
+	test("indicate changed when a baseline+specifier are valid with no prior install", async () => {
 		const baselinePath = path.join("/path/to/baseline.yml");
 		const specifierPath = path.join("/path/to/specifier.yml");
 		makeReadFileSpy({
@@ -81,7 +81,7 @@ describe("processExtensions()", () => {
 		).toEqual({ status: "CHANGED", runUpdatePhp: false });
 	});
 
-	it("should indicate no change if prior install matches current", async () => {
+	test("indicate no change if prior install matches current", async () => {
 		const baselinePath = path.join("/path/to/baseline.yml");
 		const specifierPath = path.join("/path/to/specifier.yml");
 		const priorPath = path.join("/path/to/prior-installation.yml");
@@ -112,7 +112,7 @@ describe("processExtensions()", () => {
 		).toEqual({ status: "NOCHANGE" });
 	});
 
-	it("should error if composer command fails (or any doExtensions() command)", async () => {
+	test("error if composer command fails (or any doExtensions() command)", async () => {
 		const baselinePath = path.join("/path/to/baseline.yml");
 		const specifierPath = path.join("/path/to/specifier.yml");
 		makeReadFileSpy({

@@ -1,7 +1,7 @@
 import propsMatch from "./propsMatch";
 
 describe("propsMatch()", () => {
-	it("should return true for simple primitive cases", () => {
+	test("return true for simple primitive cases", () => {
 		expect(
 			propsMatch({ a: 1, b: 2, c: 3 }, { a: 1, b: 2, c: 3 }, ["a", "b", "c"])
 		).toEqual(true);
@@ -13,13 +13,13 @@ describe("propsMatch()", () => {
 		).toEqual(true);
 	});
 
-	it("should return true if the desired props match and others do not", () => {
+	test("return true if the desired props match and others do not", () => {
 		expect(
 			propsMatch({ a: 1, b: 2, c: 3 }, { a: 1, b: 2, c: "test" }, ["a", "b"])
 		).toEqual(true);
 	});
 
-	it("should return false for failed simple primitive cases", () => {
+	test("return false for failed simple primitive cases", () => {
 		expect(
 			propsMatch({ a: 1, b: 2, c: 3 }, { a: 1, b: 2, c: "3" }, ["a", "b", "c"])
 		).toEqual(false);
@@ -31,7 +31,7 @@ describe("propsMatch()", () => {
 		).toEqual(false);
 	});
 
-	it("should return true for deep-equality cases", () => {
+	test("return true for deep-equality cases", () => {
 		expect(
 			propsMatch(
 				{ a: { x: 1, y: 2 }, b: 2, c: 3 },
@@ -48,7 +48,7 @@ describe("propsMatch()", () => {
 		).toEqual(true);
 	});
 
-	it("should return false for failed deep-equality cases", () => {
+	test("return false for failed deep-equality cases", () => {
 		expect(
 			propsMatch(
 				{ a: { x: 1, y: 2 }, b: 2, c: 3 },

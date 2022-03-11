@@ -6,7 +6,7 @@ import getExtensionConfig, {
 } from "./getExtensionConfig";
 
 describe("isExtensionConfig()", () => {
-	it("should return false on invalid ExtensionConfig", () => {
+	test("return false on invalid ExtensionConfig", () => {
 		expect(isExtensionConfig(undefined)).toBe(false);
 		expect(isExtensionConfig(null)).toBe(false);
 		expect(isExtensionConfig(false)).toBe(false);
@@ -17,7 +17,7 @@ describe("isExtensionConfig()", () => {
 		expect(isExtensionConfig({ name: "ExtensionName" })).toBe(false);
 	});
 
-	it("should return true on valid ExtensionConfig", () => {
+	test("return true on valid ExtensionConfig", () => {
 		expect(
 			isExtensionConfig({
 				name: "ExtensionName",
@@ -44,12 +44,12 @@ describe("isExtensionConfig()", () => {
 });
 
 describe("isExtensionConfigArray()", () => {
-	it("should return false for non-arrays", () => {
+	test("return false for non-arrays", () => {
 		expect(isExtensionConfigArray({})).toEqual(false);
 		expect(isExtensionConfigArray("stuff")).toEqual(false);
 		expect(isExtensionConfigArray(42)).toEqual(false);
 	});
-	it("should return false if any array element fails isExtensionConfig()", () => {
+	test("return false if any array element fails isExtensionConfig()", () => {
 		expect(isExtensionConfigArray([{}, { name: "MyExt" }])).toEqual(false);
 		expect(
 			isExtensionConfigArray([{ name: "MyExt" }, "not an object"])
@@ -92,7 +92,7 @@ describe("isExtensionConfigArray()", () => {
 			])
 		).toEqual(false);
 	});
-	it("should return true for valid input", () => {
+	test("return true for valid input", () => {
 		expect(
 			isExtensionConfigArray([
 				{ name: "Ext2", version: "1.2.3", repo: "https://example.com" },
@@ -103,12 +103,12 @@ describe("isExtensionConfigArray()", () => {
 });
 
 describe("isPartialExtensionConfigArray()", () => {
-	it("should return false for non-arrays", () => {
+	test("return false for non-arrays", () => {
 		expect(isPartialExtensionConfigArray({})).toEqual(false);
 		expect(isPartialExtensionConfigArray("stuff")).toEqual(false);
 		expect(isPartialExtensionConfigArray(42)).toEqual(false);
 	});
-	it("should return false if any array element fails isPartialExtensionConfig()", () => {
+	test("return false if any array element fails isPartialExtensionConfig()", () => {
 		expect(isPartialExtensionConfigArray([{}, { name: "MyExt" }])).toEqual(
 			false
 		);
@@ -117,7 +117,7 @@ describe("isPartialExtensionConfigArray()", () => {
 		).toEqual(false);
 		expect(isPartialExtensionConfigArray([null])).toEqual(false);
 	});
-	it("should return true for valid input", () => {
+	test("return true for valid input", () => {
 		expect(
 			isPartialExtensionConfigArray([
 				{ name: "MyExt" },
@@ -128,7 +128,7 @@ describe("isPartialExtensionConfigArray()", () => {
 });
 
 describe("mergeExtensionConfigs()", () => {
-	it("should perform typical merge for standard", () => {
+	test("perform typical merge for standard", () => {
 		expect(
 			mergeExtensionConfigs(
 				{ name: "Extension1", repo: "http...", version: "1" },
@@ -140,7 +140,7 @@ describe("mergeExtensionConfigs()", () => {
 			version: "1",
 		});
 	});
-	it("should perform typical merge for composer extension", () => {
+	test("perform typical merge for composer extension", () => {
 		expect(
 			mergeExtensionConfigs(
 				{ name: "Extension1", composer: "group/thing", version: "1" },
@@ -152,7 +152,7 @@ describe("mergeExtensionConfigs()", () => {
 			version: "1",
 		});
 	});
-	it("should include optional props from baseline", () => {
+	test("include optional props from baseline", () => {
 		expect(
 			mergeExtensionConfigs(
 				{
@@ -178,7 +178,7 @@ describe("mergeExtensionConfigs()", () => {
 			legacy_load: true,
 		});
 	});
-	it("should override baseline", () => {
+	test("override baseline", () => {
 		expect(
 			mergeExtensionConfigs(
 				{
@@ -213,7 +213,7 @@ describe("mergeExtensionConfigs()", () => {
 			legacy_load: true,
 		});
 	});
-	it("should use 'composer' prop if specified used 'composer' and baseline used 'repo'", () => {
+	test("use 'composer' prop if specified used 'composer' and baseline used 'repo'", () => {
 		expect(
 			mergeExtensionConfigs(
 				{ name: "Extension1", repo: "http...", version: "1" },
@@ -225,7 +225,7 @@ describe("mergeExtensionConfigs()", () => {
 			version: "x",
 		});
 	});
-	it("should use 'repo' prop if specified used 'repo' and baseline used 'compose'", () => {
+	test("use 'repo' prop if specified used 'repo' and baseline used 'compose'", () => {
 		expect(
 			mergeExtensionConfigs(
 				{ name: "Extension1", composer: "group/thing", version: "x" },
@@ -240,7 +240,7 @@ describe("mergeExtensionConfigs()", () => {
 });
 
 describe("getExtensionConfig()", () => {
-	it("should handle a simple config merge", () => {
+	test("handle a simple config merge", () => {
 		expect(
 			getExtensionConfig(
 				[
@@ -259,7 +259,7 @@ describe("getExtensionConfig()", () => {
 			{ name: "Extension3", composer: "group/thing", version: "3.3.3" },
 		]);
 	});
-	it("should log an error if an incomplete extension config is encountered", () => {
+	test("log an error if an incomplete extension config is encountered", () => {
 		const spy = jest.spyOn(console, "error").mockImplementation(() => null);
 		expect(
 			getExtensionConfig(

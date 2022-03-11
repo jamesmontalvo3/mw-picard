@@ -1,5 +1,5 @@
 import fs, { promises as fsp } from "fs";
-// fixme in new commit replace `it("should ` with ``
+// fixme in new commit replace `test("` with ``
 import path from "path";
 import * as asyncExecModule from "./asyncExec";
 import doExtensions, {
@@ -26,7 +26,7 @@ import {
 } from "./test-utils";
 
 describe("shouldUpdateExtension()", () => {
-	it("should update extension if props change", () => {
+	test("update extension if props change", () => {
 		expect(
 			shouldUpdateExtension(
 				{
@@ -85,7 +85,7 @@ describe("shouldUpdateExtension()", () => {
 		).toEqual(true);
 	});
 
-	it("should not update extension if props don't change", () => {
+	test("not update extension if props don't change", () => {
 		expect(
 			shouldUpdateExtension(
 				{
@@ -124,7 +124,7 @@ describe("shouldUpdateExtension()", () => {
 		).toEqual(false);
 	});
 
-	it("should update extension if no old conf", () => {
+	test("update extension if no old conf", () => {
 		expect(
 			shouldUpdateExtension({
 				name: "MyExtension",
@@ -136,7 +136,7 @@ describe("shouldUpdateExtension()", () => {
 });
 
 describe("shouldRunUpdatePhp()", () => {
-	it("should run update.php if props change", () => {
+	test("run update.php if props change", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -154,7 +154,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(true);
 	});
-	it("should never require update.php if update_php_on_change is false", () => {
+	test("never require update.php if update_php_on_change is false", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -184,7 +184,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should not run update.php if props don't change", () => {
+	test("not run update.php if props don't change", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -214,7 +214,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should not run update.php if only config change and extension states 'code-changes'", () => {
+	test("not run update.php if only config change and extension states 'code-changes'", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -244,7 +244,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should run update.php on all wikis if no old conf and extension requires update.php and is on all wikis", () => {
+	test("run update.php on all wikis if no old conf and extension requires update.php and is on all wikis", () => {
 		expect(
 			shouldRunUpdatePhp({
 				name: "MyExtension",
@@ -259,7 +259,7 @@ describe("shouldRunUpdatePhp()", () => {
 			})
 		).toEqual(true);
 	});
-	it("should run update.php on specific wikis if no old conf and extension requires update.php and is only on specific wikis", () => {
+	test("run update.php on specific wikis if no old conf and extension requires update.php and is only on specific wikis", () => {
 		expect(
 			shouldRunUpdatePhp({
 				name: "MyExtension",
@@ -275,7 +275,7 @@ describe("shouldRunUpdatePhp()", () => {
 			})
 		).toEqual(["onewiki", "twowiki"]);
 	});
-	it("should not run update.php if no old conf and extension does not require update.php", () => {
+	test("not run update.php if no old conf and extension does not require update.php", () => {
 		expect(
 			shouldRunUpdatePhp({
 				name: "MyExtension",
@@ -291,7 +291,7 @@ describe("shouldRunUpdatePhp()", () => {
 			})
 		).toEqual(false);
 	});
-	it("should specify which wikis to run changes on if only wikis added", () => {
+	test("specify which wikis to run changes on if only wikis added", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -321,7 +321,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(["threewiki"]);
 	});
-	it("should not require update.php if only wikis removed", () => {
+	test("not require update.php if only wikis removed", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -351,7 +351,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should only require update.php for added wiki if one wiki added and one removed", () => {
+	test("only require update.php for added wiki if one wiki added and one removed", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -381,7 +381,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(["threewiki"]);
 	});
-	it("should be uneffected by reordering wikis", () => {
+	test("be uneffected by reordering wikis", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -411,7 +411,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should handle going from specifying wikis to all-wikis (not specifying wikis)", () => {
+	test("handle going from specifying wikis to all-wikis (not specifying wikis)", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -431,7 +431,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should only update specified wikis if the wiki's version updates", () => {
+	test("only update specified wikis if the wiki's version updates", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -463,7 +463,7 @@ describe("shouldRunUpdatePhp()", () => {
 	// Case 6: should update.php-now-wikis if changed AND all-wikis-before AND select-wikis-now
 	// Case 7: should update.php-all       if changed AND select-wikis-before AND all-wikis-now
 	// Case 8: should update.php-now-wikis if changed AND select-wikis-before AND select-wikis-now
-	it("should handle case 1: don't update.php if no-change AND all-wikis-before and all-wikis-now", () => {
+	test("handle case 1: don't update.php if no-change AND all-wikis-before and all-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -481,7 +481,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should handle case 2: don't update.php if no-change AND all-wikis-before and select-wikis-now", () => {
+	test("handle case 2: don't update.php if no-change AND all-wikis-before and select-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -500,7 +500,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(false);
 	});
-	it("should handle case 3: update.php-for-all if no-change AND select-wikis-before and all-wikis-now", () => {
+	test("handle case 3: update.php-for-all if no-change AND select-wikis-before and all-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -519,7 +519,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(true);
 	});
-	it("should handle case 4: update.php-for-NEW-wikis if no-change AND select-wikis-before and select-wikis-now", () => {
+	test("handle case 4: update.php-for-NEW-wikis if no-change AND select-wikis-before and select-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -539,7 +539,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(["twowiki"]);
 	});
-	it("should handle case 5: update.php-for-all if changed AND all-wikis-before and all-wikis-now", () => {
+	test("handle case 5: update.php-for-all if changed AND all-wikis-before and all-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -557,7 +557,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(true);
 	});
-	it("should handle case 6: update.php-for-NOW-wikis if changed AND all-wikis-before and select-wikis-now", () => {
+	test("handle case 6: update.php-for-NOW-wikis if changed AND all-wikis-before and select-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -576,7 +576,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(["onewiki", "threewiki"]);
 	});
-	it("should handle case 7: update.php-for-all if changed AND select-wikis-before and all-wikis-now", () => {
+	test("handle case 7: update.php-for-all if changed AND select-wikis-before and all-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -595,7 +595,7 @@ describe("shouldRunUpdatePhp()", () => {
 			)
 		).toEqual(true);
 	});
-	it("should handle case 8: update.php-for-NOW-wikis if changed AND select-wikis-before and select-wikis-now", () => {
+	test("handle case 8: update.php-for-NOW-wikis if changed AND select-wikis-before and select-wikis-now", () => {
 		expect(
 			shouldRunUpdatePhp(
 				{
@@ -619,7 +619,7 @@ describe("shouldRunUpdatePhp()", () => {
 
 // fixme needed?
 describe("createLoadCommand()", () => {
-	it("should return empty string for composer extensions", () => {
+	test("return empty string for composer extensions", () => {
 		expect(
 			createLoadCommand({
 				name: "MyExt",
@@ -628,7 +628,7 @@ describe("createLoadCommand()", () => {
 			})
 		).toEqual("");
 	});
-	it("should return require_once for legacy loaded extension", () => {
+	test("return require_once for legacy loaded extension", () => {
 		expect(
 			createLoadCommand({
 				name: "MyExt",
@@ -638,7 +638,7 @@ describe("createLoadCommand()", () => {
 			})
 		).toEqual("require_once '$IP/extensions/MyExt/MyExt.php';\n");
 	});
-	it("should return require_once for legacy loaded skin", () => {
+	test("return require_once for legacy loaded skin", () => {
 		expect(
 			createLoadCommand({
 				name: "MySkin",
@@ -649,7 +649,7 @@ describe("createLoadCommand()", () => {
 			})
 		).toEqual("require_once '$IP/skins/MySkin/MySkin.php';\n");
 	});
-	it("should use extension loader for normal extensions", () => {
+	test("use extension loader for normal extensions", () => {
 		expect(
 			createLoadCommand({
 				name: "MyExt",
@@ -658,7 +658,7 @@ describe("createLoadCommand()", () => {
 			})
 		).toEqual('wfLoadExtension( "MyExt" );\n');
 	});
-	it("should use extension loader for normal skins", () => {
+	test("use extension loader for normal skins", () => {
 		expect(
 			createLoadCommand({
 				name: "MyExt",
@@ -671,7 +671,7 @@ describe("createLoadCommand()", () => {
 });
 
 describe("createExtensionSettings()", () => {
-	it("should produce settings for normal extension", () => {
+	test("produce settings for normal extension", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -691,7 +691,7 @@ $wgMyExtVar3 = [];
 		);
 	});
 
-	it("should produce settings for normal skin", () => {
+	test("produce settings for normal skin", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -712,7 +712,7 @@ $wgMyExtVar3 = [];
 		);
 	});
 
-	it("should produce settings for composer extension", () => {
+	test("produce settings for composer extension", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -731,7 +731,7 @@ $wgMyExtVar3 = [];
 		);
 	});
 
-	it("should produce settings for legacy-load extension", () => {
+	test("produce settings for legacy-load extension", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -752,7 +752,7 @@ $wgMyExtVar3 = [];
 		);
 	});
 
-	it("should produce settings without config", () => {
+	test("produce settings without config", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -770,7 +770,7 @@ $wgMyExtVar3 = [];
 		);
 	});
 
-	it("should produce settings without more_config", () => {
+	test("produce settings without more_config", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -787,7 +787,7 @@ $wgMyExtVar = 42;
 		);
 	});
 
-	it("should produce settings without config or more_config", () => {
+	test("produce settings without config or more_config", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -802,7 +802,7 @@ wfLoadExtension( "MyExt" );
 		);
 	});
 
-	it("should produce settings for wiki-specific extensions", () => {
+	test("produce settings for wiki-specific extensions", () => {
 		expect(
 			createExtensionSettings({
 				name: "MyExt",
@@ -845,14 +845,14 @@ describe("isGitRepo()", () => {
 			});
 		makeAsyncRimrafSpy(() => async () => undefined);
 	});
-	it("should fail if path doesn't exist", async () => {
+	test("fail if path doesn't exist", async () => {
 		const result = await isGitRepo("/path/does/not/exist");
 		expect(result).toEqual(false);
 	});
-	it("should fail if doesn't have .git/ sub-directory", async () => {
+	test("fail if doesn't have .git/ sub-directory", async () => {
 		expect(await isGitRepo("/not/git/repo")).toEqual(false);
 	});
-	it("should return true if path exists and has .git/ sub-directory", async () => {
+	test("return true if path exists and has .git/ sub-directory", async () => {
 		expect(await isGitRepo("/is/git/repo")).toEqual(true);
 	});
 	afterAll(() => {
@@ -862,7 +862,7 @@ describe("isGitRepo()", () => {
 });
 
 describe("gitCheckoutCommand()", () => {
-	it("should create command that fetches and cleans up repo", () => {
+	test("create command that fetches and cleans up repo", () => {
 		expect(
 			gitCheckoutCommand({
 				cloneDirectory: "/path/to/ext",
@@ -874,7 +874,7 @@ describe("gitCheckoutCommand()", () => {
 			"cd /path/to/ext && git fetch && git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
 		);
 	});
-	it("should create command that fetch", () => {
+	test("create command that fetch", () => {
 		expect(
 			gitCheckoutCommand({
 				cloneDirectory: "/path/to/ext",
@@ -884,7 +884,7 @@ describe("gitCheckoutCommand()", () => {
 			})
 		).toEqual("cd /path/to/ext && git fetch && git checkout tags/1.2.3");
 	});
-	it("should create command that just cleans up repo", () => {
+	test("create command that just cleans up repo", () => {
 		expect(
 			gitCheckoutCommand({
 				cloneDirectory: "/path/to/ext",
@@ -896,7 +896,7 @@ describe("gitCheckoutCommand()", () => {
 			"cd /path/to/ext && git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
 		);
 	});
-	it("should just checks out the correct version", () => {
+	test("just checks out the correct version", () => {
 		expect(
 			gitCheckoutCommand({
 				cloneDirectory: "/path/to/ext",
@@ -940,7 +940,7 @@ describe("makeGitRight()", () => {
 		consoleErrorSpy.mockRestore();
 	});
 
-	it("should handle existing repo-directory with valid commands", async () => {
+	test("handle existing repo-directory with valid commands", async () => {
 		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
 
 		expect(
@@ -956,7 +956,7 @@ describe("makeGitRight()", () => {
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(0);
 	});
 
-	it("should handle existing repo-directory with invalid commands", async () => {
+	test("handle existing repo-directory with invalid commands", async () => {
 		const asyncExecSpy = makeAsyncExecSpy({ throws: true });
 
 		expect(
@@ -988,7 +988,7 @@ describe("makeGitRight()", () => {
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(0);
 	});
 
-	it("should handle missing repo-directory with invalid commands", async () => {
+	test("handle missing repo-directory with invalid commands", async () => {
 		const asyncExecSpy = makeAsyncExecSpy({ throws: true });
 
 		expect(
@@ -1031,7 +1031,7 @@ describe("doComposerExtensions()", () => {
 		},
 	};
 
-	it("should not replace baseline composer.local.json if no change", async () => {
+	test("not replace baseline composer.local.json if no change", async () => {
 		const cLocalJsonPath = path.join(
 			"/path/to/mediawiki",
 			"composer.local.json"
@@ -1055,7 +1055,7 @@ describe("doComposerExtensions()", () => {
 		expect(asyncExecSpy).not.toHaveBeenCalled();
 	});
 
-	it("should replace baseline composer.local.json if changed", async () => {
+	test("replace baseline composer.local.json if changed", async () => {
 		const cLocalJsonPath = path.join(
 			"/path/to/mediawiki",
 			"composer.local.json"
@@ -1082,7 +1082,7 @@ describe("doComposerExtensions()", () => {
 		);
 	});
 
-	it("should write baseline composer.local.json if no preexisting file", async () => {
+	test("write baseline composer.local.json if no preexisting file", async () => {
 		const readFileSpy = makeReadFileSpy(false);
 		const writeFileSpy = makeWriteFileSpy({ throws: false });
 		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
@@ -1109,7 +1109,7 @@ describe("doComposerExtensions()", () => {
 		);
 	});
 
-	it("should return false if unable to write file", async () => {
+	test("return false if unable to write file", async () => {
 		const cleanMediawikiPath = path.join("/path/to/mediawiki");
 		const cLocalJsonPath = path.join(cleanMediawikiPath, "composer.local.json");
 
@@ -1133,7 +1133,7 @@ describe("doComposerExtensions()", () => {
 		expect(asyncExecSpy).not.toHaveBeenCalled();
 	});
 
-	it("should add composer and composer-merge extensions", async () => {
+	test("add composer and composer-merge extensions", async () => {
 		const cLocalJsonPath = path.join(
 			"/path/to/mediawiki",
 			"composer.local.json"
@@ -1193,7 +1193,7 @@ describe("doExtensionSettings()", () => {
 		jest.restoreAllMocks();
 	});
 
-	it("should write ExtensionSettings.php", async () => {
+	test("write ExtensionSettings.php", async () => {
 		const writeTo = { written: "" };
 		makeWriteFileSpy({ throws: false, writeTo });
 		expect(
@@ -1238,7 +1238,7 @@ $configThing2 = 'two';
 `);
 	});
 
-	it("should return false and console.error if unable to write ExtensionSettings.php", async () => {
+	test("return false and console.error if unable to write ExtensionSettings.php", async () => {
 		const writeFileSpy = makeWriteFileSpy({ throws: true });
 		const consoleErrorSpy = jest
 			.spyOn(console, "error")
@@ -1279,7 +1279,7 @@ describe("doExtensions()", () => {
 		makeAsyncExecSpy({ throws: false });
 	});
 
-	it("should handle empty config and no prior install", async () => {
+	test("handle empty config and no prior install", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1290,7 +1290,7 @@ describe("doExtensions()", () => {
 		expect(result).toEqual({ status: "CHANGED", runUpdatePhp: false });
 	});
 
-	it("should handle empty config and empty prior install", async () => {
+	test("handle empty config and empty prior install", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1301,7 +1301,7 @@ describe("doExtensions()", () => {
 		expect(result).toEqual({ status: "NOCHANGE" });
 	});
 
-	it("should write first real config and inform to run update.php", async () => {
+	test("write first real config and inform to run update.php", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1339,7 +1339,7 @@ describe("doExtensions()", () => {
 		});
 	});
 
-	it("should overwrite config and inform to run update.php", async () => {
+	test("overwrite config and inform to run update.php", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1401,7 +1401,7 @@ describe("doExtensions()", () => {
 		});
 	});
 
-	it("should overwrite config and inform to run update.php for added wiki when extension requires it", async () => {
+	test("overwrite config and inform to run update.php for added wiki when extension requires it", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1460,7 +1460,7 @@ describe("doExtensions()", () => {
 		expect(result).toEqual({ status: "CHANGED", runUpdatePhp: ["threewiki"] });
 	});
 
-	it("should overwrite config and merge requirements for which wikis to run update.php", async () => {
+	test("overwrite config and merge requirements for which wikis to run update.php", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1530,7 +1530,7 @@ describe("doExtensions()", () => {
 		});
 	});
 
-	it("should overwrite config and run update.php on all wikis", async () => {
+	test("overwrite config and run update.php on all wikis", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1563,7 +1563,7 @@ describe("doExtensions()", () => {
 		});
 	});
 
-	it("should handle skins", async () => {
+	test("handle skins", async () => {
 		const result = await doExtensions({
 			mediawikiPath: "/path/to/mw",
 			composerCmd: "/path/to/composer",
@@ -1605,7 +1605,7 @@ describe("doExtensions() errors", () => {
 		jest.clearAllMocks();
 	});
 
-	it("should error if unable to run git commands", async () => {
+	test("error if unable to run git commands", async () => {
 		makeReadFileSpy("{}");
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: true });
@@ -1630,7 +1630,7 @@ describe("doExtensions() errors", () => {
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
 
-	it("should error if fails to write ExtensionSettings.php", async () => {
+	test("error if fails to write ExtensionSettings.php", async () => {
 		makeReadFileSpy("{}");
 		makeAsyncExecSpy({ throws: false });
 		const consoleErrorSpy = makeConsoleErrorSpy();
@@ -1664,7 +1664,7 @@ describe("doExtensions() errors", () => {
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
 
-	it("should error if fails to run composer commands", async () => {
+	test("error if fails to run composer commands", async () => {
 		makeReadFileSpy("{}");
 		makeWriteFileSpy({ throws: false });
 		const consoleErrorSpy = makeConsoleErrorSpy();
