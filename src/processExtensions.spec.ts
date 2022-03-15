@@ -70,7 +70,7 @@ describe("processExtensions()", () => {
 		});
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: false });
-		makeAsyncRimrafSpy(() => async () => undefined); // make async rimraf same as others fixme
+		makeAsyncRimrafSpy({ throws: false });
 		expect(
 			await processExtensions({
 				baseline: baselinePath,
@@ -101,7 +101,7 @@ describe("processExtensions()", () => {
 		});
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: false });
-		makeAsyncRimrafSpy(() => async () => undefined); // make async rimraf same as others fixme
+		makeAsyncRimrafSpy({ throws: false }); // make async rimraf same as others fixme
 		expect(
 			await processExtensions({
 				baseline: baselinePath,
@@ -137,7 +137,6 @@ describe("processExtensions()", () => {
 			}
 			return Promise.resolve();
 		};
-		// fixme make asyncExec mock util more flexible
 		jest.spyOn(asyncExecModule, "asyncExec").mockImplementation(asyncExecMock);
 
 		expect(

@@ -2,9 +2,13 @@ import fs from "fs";
 import * as asyncExecModule from "./asyncExec";
 import * as asyncRimrafModule from "./asyncRimraf";
 
-export const makeAsyncRimrafSpy = (
-	mock: (...args: any) => any // eslint-disable-line @typescript-eslint/no-explicit-any
-): jest.SpyInstance => {
+export const makeAsyncRimrafSpy = ({
+	throws,
+}: {
+	throws: boolean;
+}): jest.SpyInstance => {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const mock: any = throws ? () => Promise.reject() : () => Promise.resolve();
 	return (
 		jest
 			.spyOn(asyncRimrafModule, "asyncRimraf")

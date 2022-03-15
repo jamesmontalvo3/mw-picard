@@ -1,5 +1,4 @@
 import fs, { promises as fsp } from "fs";
-// fixme in new commit replace `test("` with ``
 import path from "path";
 import * as asyncExecModule from "./asyncExec";
 import doExtensions, {
@@ -617,7 +616,6 @@ describe("shouldRunUpdatePhp()", () => {
 	});
 });
 
-// fixme needed?
 describe("createLoadCommand()", () => {
 	test("return empty string for composer extensions", () => {
 		expect(
@@ -824,9 +822,33 @@ if ( in_array( $wikiId, ['onewiki', 'twowiki'] ) ) {
 `
 		);
 	});
+
+	test("produce settings for empty wikis (clones extension but no wikis use)", () => {
+		expect(
+			createExtensionSettings({
+				name: "MyExt",
+				repo: "https://git.example.com",
+				version: "1.2.3",
+				config: "$wgMyExtVar = 42;",
+				more_config: "$wgMyExtVar2 = 'test';\n$wgMyExtVar3 = [];",
+				wikis: [],
+			})
+		).toEqual(
+			`/**** MyExt @ 1.2.3 ****/
+if ( in_array( $wikiId, [] ) ) {
+	wfLoadExtension( "MyExt" );
+	$wgMyExtVar = 42;
+	$wgMyExtVar2 = 'test';
+	$wgMyExtVar3 = [];
+}
+
+`
+		);
+	});
 });
 
 describe("isGitRepo()", () => {
+	let asyncRimrafSpy: jest.SpyInstance;
 	beforeAll(() => {
 		jest
 			.spyOn(fsp, "access")
@@ -843,17 +865,35 @@ describe("isGitRepo()", () => {
 					throw new Error("Path not found");
 				}
 			});
-		makeAsyncRimrafSpy(() => async () => undefined);
 	});
+
 	test("fail if path doesn't exist", async () => {
+		asyncRimrafSpy = makeAsyncRimrafSpy({ throws: false });
 		const result = await isGitRepo("/path/does/not/exist");
 		expect(result).toEqual(false);
 	});
 	test("fail if doesn't have .git/ sub-directory", async () => {
+		asyncRimrafSpy = makeAsyncRimrafSpy({ throws: false });
 		expect(await isGitRepo("/not/git/repo")).toEqual(false);
 	});
 	test("return true if path exists and has .git/ sub-directory", async () => {
+		asyncRimrafSpy = makeAsyncRimrafSpy({ throws: false });
 		expect(await isGitRepo("/is/git/repo")).toEqual(true);
+	});
+	test("throw if unable to delete existing non-git directory", async () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
+		asyncRimrafSpy = makeAsyncRimrafSpy({ throws: true });
+		await expect(async () => {
+			await isGitRepo("/not/git/repo");
+		}).rejects.toThrow();
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(0);
+		consoleErrorSpy.mockRestore();
+		consoleErrorSpy.mockClear();
+	});
+
+	afterEach(() => {
+		asyncRimrafSpy.mockRestore();
+		asyncRimrafSpy.mockClear();
 	});
 	afterAll(() => {
 		jest.restoreAllMocks();
@@ -910,6 +950,7 @@ describe("gitCheckoutCommand()", () => {
 
 describe("makeGitRight()", () => {
 	let consoleErrorSpy: jest.SpyInstance;
+	let asyncRimrafSpy: jest.SpyInstance;
 
 	beforeAll(() => {
 		jest
@@ -927,7 +968,7 @@ describe("makeGitRight()", () => {
 					throw new Error("Path not found");
 				}
 			});
-		makeAsyncRimrafSpy(() => async () => undefined);
+		asyncRimrafSpy = makeAsyncRimrafSpy({ throws: false });
 	});
 
 	beforeEach(() => {
@@ -938,6 +979,7 @@ describe("makeGitRight()", () => {
 
 	afterEach(() => {
 		consoleErrorSpy.mockRestore();
+		asyncRimrafSpy.mockRestore();
 	});
 
 	test("handle existing repo-directory with valid commands", async () => {
@@ -1004,7 +1046,26 @@ describe("makeGitRight()", () => {
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
 
-	// FIXME does this do anything?
+	test("handle non-git repo when insufficient rights to delete directory", async () => {
+		const asyncExecSpy = makeAsyncExecSpy({ throws: true });
+
+		// override the default one
+		asyncRimrafSpy.mockRestore();
+		asyncRimrafSpy = makeAsyncRimrafSpy({ throws: true });
+
+		expect(
+			await makeGitRight({
+				cloneDirectory: "/not/git/repo",
+				repo: "https://git.example.com/MyExt",
+				version: "4.2.3",
+			})
+		).toEqual(false);
+		expect(asyncExecSpy).toHaveBeenCalledWith(
+			"git clone https://git.example.com/MyExt /not/git/repo && cd /not/git/repo && git checkout 4.2.3"
+		);
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+	});
+
 	afterAll(() => {
 		jest.restoreAllMocks();
 		jest.clearAllMocks();
@@ -1012,11 +1073,6 @@ describe("makeGitRight()", () => {
 });
 
 describe("doComposerExtensions()", () => {
-	// FIXME. Mocks needed
-	// readfile - varies for different current composer.local.json, also throws
-	// writeFile - success and failure to write
-	// asyncExec - success and failure to run command
-
 	afterEach(() => {
 		jest.clearAllMocks();
 		jest.restoreAllMocks();

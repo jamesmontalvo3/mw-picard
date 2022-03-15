@@ -96,7 +96,6 @@ export const createLoadCommand = (ext: ExtensionConfig): string => {
 		: `wfLoadExtension( "${ext.name}" );\n`;
 };
 
-// FIXME add test for empty wikis array (git clones ext, but no wiki uses it)
 export const createExtensionSettings = (ext: ExtensionConfig): string => {
 	const commentHeader = `/**** ${ext.name} @ ${ext.version} ****/\n`;
 
@@ -116,28 +115,28 @@ export const createExtensionSettings = (ext: ExtensionConfig): string => {
 
 export const isGitRepo = async (dir: string): Promise<boolean> => {
 	try {
-		await fsp.access(dir);
+		await fsp.access(dir); // doesn't throw/reject? is a valid directory
 	} catch (err) {
-		return false;
+		return false; // not a git repo because not a directory
 	}
 
+	// since directory exists, check if is a git repo (has a ./.git subdirectory)
 	try {
 		await fsp.access(path.join(dir, ".git"));
 	} catch (err) {
-		// directory exists but is not a git repo. remove the directory.
-		await asyncRimraf(dir);
+		// directory exists but is not a git repo. remove the directory to start over
+		try {
+			await asyncRimraf(dir);
+		} catch (err) {
+			// cannot remove directory
+			throw new Error("Unable to delete existing directory " + dir);
+		}
 
+		// successfully remove directory so a new one may be cloned in place
 		return false;
 	}
 
 	return true;
-};
-
-// FIXME needed?
-type GitCloneProps = {
-	cloneDirectory: string;
-	repo: string;
-	version: string;
 };
 
 type CheckoutProps = {
@@ -164,8 +163,8 @@ export const gitCheckoutCommand = ({
 		cmd.push("git reset --hard HEAD && git clean -f");
 	}
 
-	// FIXME: if version is a branch, this might not change anything without origin/${version}
-	// I don't really want to get into that, since Meza should pin commits or tags /FIXME
+	// If version is a branch, this might not change anything without origin/${version}
+	// For now don't really want to get into that, since Meza should pin commits or tags
 	cmd.push(`git checkout ${version}`);
 
 	return cmd.join(" && ");
@@ -186,8 +185,20 @@ export const makeGitRight = async ({
 	cloneDirectory,
 	repo,
 	version,
-}: GitCloneProps): Promise<boolean> => {
-	const cmd = (await isGitRepo(cloneDirectory))
+}: {
+	cloneDirectory: string;
+	repo: string;
+	version: string;
+}): Promise<boolean> => {
+	let repoExists: boolean;
+	try {
+		repoExists = await isGitRepo(cloneDirectory);
+	} catch (err) {
+		console.error("Unable to remove bad repo: ", err);
+		return false;
+	}
+
+	const cmd = repoExists
 		? gitCheckoutCommand({
 				cloneDirectory,
 				version,

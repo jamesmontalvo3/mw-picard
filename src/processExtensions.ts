@@ -61,11 +61,11 @@ const processExtensions = async (
 				? false
 				: installedMaybe;
 	} catch (err) {
-		return { status: "ERROR" }; // FIXME return error?
+		return { status: "ERROR" };
 	}
 
 	if (!baseline || !specifier) {
-		return { status: "ERROR" }; // fixme throw? return error?
+		return { status: "ERROR" };
 	}
 
 	const extensionsConfig = getExtensionConfig(baseline, specifier);
