@@ -348,7 +348,7 @@ const doEmail = ({
 		$wgEnotifWatchlist = $wgEnableEmail; # UPO
 		$wgEmailAuthentication = $wgEnableEmail;
 
-		$wgPasswordSender = '${wgPasswordSender};
+		$wgPasswordSender = '${wgPasswordSender}';
 		$wgEmergencyContact = '${wgEmergencyContact}';
 		`;
 };
@@ -514,7 +514,7 @@ const doGeneralConfig = ({
 					server === thisServer || server === "localhost"
 						? "127.0.0.1"
 						: server;
-				return "\t" + s;
+				return "'" + s + "'";
 			})
 			.join(",\n")}
 		];
@@ -533,7 +533,7 @@ const doGeneralConfig = ({
 						server === thisServer || server === "localhost"
 							? "127.0.0.1"
 							: server;
-					return `\t${s}:11211`;
+					return `'${s}:11211'`;
 				})
 				.join(",\n")}
 		];
@@ -805,7 +805,7 @@ const doExtensionsSettings = ({
 		$wgCirrusSearchClusters['default'] = [
 			${elasticsearchServers
 				.map((server) => {
-					return "\t" + serverOrLocalhost(server, thisServer);
+					return "'" + serverOrLocalhost(server, thisServer) + "'";
 				})
 				.join(",\n")}
 		];

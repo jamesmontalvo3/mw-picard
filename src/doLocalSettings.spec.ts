@@ -1,5 +1,6 @@
 import doLocalSettings, { doPermissions } from "./doLocalSettings";
 import fs from "fs";
+import path from "path";
 
 describe("doLocalSettings()", () => {
 	// FIXME name
@@ -44,7 +45,12 @@ describe("doLocalSettings()", () => {
 					"es3.example.com",
 				],
 			})
-		).toEqual("nothing");
+		).toEqual(
+			await fs.promises.readFile(
+				path.join(__dirname, "..", "test-cases", "LS-1.php"),
+				"utf-8"
+			)
+		);
 	});
 
 	// FIXME name
@@ -162,44 +168,15 @@ describe("doLocalSettings()", () => {
 					"es3.example.com",
 				],
 			})
-		).toEqual("nothing");
+		).toEqual(
+			await fs.promises.readFile(
+				path.join(__dirname, "..", "test-cases", "LS-1.php"),
+				"utf-8"
+			)
+		);
 	});
 
 	test("handle dev config and alternate settings", async () => {
-		fs.writeFileSync(
-			__dirname + "/localsettings.php",
-			doLocalSettings({
-				wikis: [
-					{
-						id: "mywiki",
-						dbName: "db_mywiki",
-					},
-				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
-
-				mezaAuthType: "user-read",
-				phpConfigPath: "/path/to/config",
-				allowRequestDebug: true,
-				wikiAppFqdn: "localhost",
-				enableEmail: false,
-				wgPasswordSender: "admin@example.com",
-				wgEmergencyContact: "admin@example.com",
-				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
-				wgAllowExternalImages: false,
-				wgAllowImageTag: false,
-				wgLocaltimezone: "America/Chicago",
-
-				dbMaster: "localhost",
-				wikiAppDbPassword: "password1",
-				wikiAppDbUser: "theuser",
-				thisServer: "localhost",
-				loadBalancers: ["localhost"],
-				memcachedServers: ["localhost"],
-				elasticsearchServers: ["localhost"],
-			}) as string
-		);
 		expect(
 			doLocalSettings({
 				wikis: [
@@ -232,7 +209,12 @@ describe("doLocalSettings()", () => {
 				memcachedServers: ["localhost"],
 				elasticsearchServers: ["localhost"],
 			})
-		).toEqual("nothing");
+		).toEqual(
+			await fs.promises.readFile(
+				path.join(__dirname, "..", "test-cases", "LS-1.php"),
+				"utf-8"
+			)
+		);
 	});
 });
 
