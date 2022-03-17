@@ -84,11 +84,12 @@ type PlatformConfig = {
 };
 
 const doRedirects = (wikis: WikiConfig[]) => {
-	const allRedirects: Record<string, string> = {};
+	// const allRedirects: Record<string, string> = {};
+	const allRedirects: { redirect: string; id: string }[] = [];
 	for (const wiki of wikis) {
 		if (wiki.redirectsFrom) {
 			for (const redirect of wiki.redirectsFrom) {
-				allRedirects[redirect] = wiki.id;
+				allRedirects.push({ redirect, id: wiki.id });
 			}
 		}
 	}
@@ -97,16 +98,11 @@ const doRedirects = (wikis: WikiConfig[]) => {
 		return "";
 	}
 
-	// fixme formatting not like rest of file
-	let phpRedirects =
-		"// array point wiki IDs to redirect from and to\n$wikiIdRedirects = [\n";
-	for (const red in allRedirects) {
-		phpRedirects += `\t'${red}' => '${allRedirects[red]}',\n`;
-	}
-	phpRedirects += "];";
-
 	return dedent`
-		${phpRedirects}
+		// array point wiki IDs to redirect from and to
+		$wikiIdRedirects = [
+			${allRedirects.map((r) => `'${r.redirect}' => '${r.id}'`).join(",\n\t")}
+		];
 
 		// check if current wiki ID is a key in this array, and thus should redirect to another wiki
 		if ( isset( $wikiIdRedirects[ $wikiId ] ) ) {

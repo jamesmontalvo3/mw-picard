@@ -46,7 +46,7 @@ else {
 // array point wiki IDs to redirect from and to
 $wikiIdRedirects = [
 	'oldwiki' => 'mywiki',
-	'reallyoldwiki' => 'mywiki',
+	'reallyoldwiki' => 'mywiki'
 ];
 
 // check if current wiki ID is a key in this array, and thus should redirect to another wiki
