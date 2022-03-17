@@ -53,8 +53,7 @@ if ( ! in_array( $wikiId, $wikis ) ) {
 
 	// handle invalid wiki
 	http_response_code(404);
-	die( "No wiki found with ID \"$wikiId\"
-" );
+	die( "No wiki found with ID \"$wikiId\"\n" );
 
 }
 
@@ -96,10 +95,12 @@ if ( $mezaForceDebug ) {
 elseif ( $wgCommandLineMode && $mezaCommandLineDebug ) {
 	$debug = true;
 }
+
 // allows appending ?requestDebug=true to any URL to see debug. Disable this in production
 elseif ( isset( $_GET['requestDebug'] ) ) {
 	$debug = true;
 }
+
 else {
 	$debug = false;
 }
@@ -220,7 +221,7 @@ $wgEmergencyContact = 'admin@example.com';
  *
  **/
 $mezaDatabaseServers = [
-		localhost
+	'127.0.0.1'
 ];
 
 $mezaDatabasePassword = 'password1';
@@ -228,7 +229,7 @@ $mezaDatabaseUser = 'theuser';
 $mezaThisServer = 'localhost';
 
 $mezaWikiDatabases = [
-		'mywiki' => 'db_mywiki'
+	'mywiki' => 'db_mywiki'
 ];
 
 // even though using $wgDBservers method below, keep $wgDBname per warning in:
@@ -268,9 +269,6 @@ $wgDBprefix = "";
 
 # MySQL table options to use during installation or update
 $wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
-
-# Experimental charset support for MySQL 5.0.
-$wgDBmysql5 = false;
 
 
 

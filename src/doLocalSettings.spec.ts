@@ -3,8 +3,24 @@ import fs from "fs";
 import path from "path";
 
 describe("doLocalSettings()", () => {
+	const loadLocalSettingsExpectedVals = async (
+		caseNum: number
+	): Promise<string> => {
+		// async (case: number): Promise<string>) => {
+		return fs.promises.readFile(
+			path.join(
+				__dirname,
+				"..",
+				"test-cases",
+				`LocalSettings-Case${caseNum}.php`
+			),
+			"utf-8"
+		);
+	};
+
 	// FIXME name
-	test("fixme", async () => {
+	test("case 1: handle typical wiki", async () => {
+		const expected = await loadLocalSettingsExpectedVals(1);
 		expect(
 			doLocalSettings({
 				wikis: [
@@ -45,16 +61,10 @@ describe("doLocalSettings()", () => {
 					"es3.example.com",
 				],
 			})
-		).toEqual(
-			await fs.promises.readFile(
-				path.join(__dirname, "..", "test-cases", "LS-1.php"),
-				"utf-8"
-			)
-		);
+		).toEqual(expected);
 	});
 
-	// FIXME name
-	test("handle two primary wikis and overlapping redirects", async () => {
+	test("case 2: handle two primary wikis and overlapping redirects", async () => {
 		expect(
 			doLocalSettings({
 				wikis: [
@@ -103,20 +113,22 @@ describe("doLocalSettings()", () => {
 					"es3.example.com",
 				],
 			})
-		).toEqual([
-			{
-				errorType: "AppError",
-				msg: `Tried to set mywiki2 as primary wiki when already set to mywiki`,
-			},
-			{
-				errorType: "AppError",
-				msg: `Wiki ID or redirect "oldwiki" found more than once`,
-			},
-		]);
+		).toEqual({
+			errors: [
+				{
+					errorType: "AppError",
+					msg: `Tried to set mywiki2 as primary wiki when already set to mywiki`,
+				},
+				{
+					errorType: "AppError",
+					msg: `Wiki ID or redirect "oldwiki" found more than once`,
+				},
+			],
+		});
 	});
 
-	// FIXME name
-	test("handle no primary wiki and app server running services", async () => {
+	test("case 3: handle no primary wiki and app server running services", async () => {
+		const expected = await loadLocalSettingsExpectedVals(3);
 		expect(
 			doLocalSettings({
 				wikis: [
@@ -168,15 +180,11 @@ describe("doLocalSettings()", () => {
 					"es3.example.com",
 				],
 			})
-		).toEqual(
-			await fs.promises.readFile(
-				path.join(__dirname, "..", "test-cases", "LS-1.php"),
-				"utf-8"
-			)
-		);
+		).toEqual(expected);
 	});
 
-	test("handle dev config and alternate settings", async () => {
+	test("case 4: handle dev config and alternate settings", async () => {
+		const expected = await loadLocalSettingsExpectedVals(4);
 		expect(
 			doLocalSettings({
 				wikis: [
@@ -209,12 +217,7 @@ describe("doLocalSettings()", () => {
 				memcachedServers: ["localhost"],
 				elasticsearchServers: ["localhost"],
 			})
-		).toEqual(
-			await fs.promises.readFile(
-				path.join(__dirname, "..", "test-cases", "LS-1.php"),
-				"utf-8"
-			)
-		);
+		).toEqual(expected);
 	});
 });
 

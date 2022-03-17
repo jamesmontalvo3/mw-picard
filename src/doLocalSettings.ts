@@ -1,5 +1,11 @@
 import dedent from "dedent-js";
 
+// fixme use this other places
+// fixme docs
+const serverOrLocalhost = (server: string, thisServer: string): string => {
+	return server === thisServer || server === "localhost" ? "127.0.0.1" : server;
+};
+
 const doIntro = () => {
 	return dedent`
 		<?php
@@ -105,7 +111,7 @@ const doRedirects = (wikis: WikiConfig[]) => {
 		// check if current wiki ID is a key in this array, and thus should redirect to another wiki
 		if ( isset( $wikiIdRedirects[ $wikiId ] ) ) {
 
-				$newURI = preg_replace(
+			$newURI = preg_replace(
 				"/^\\/([\\w\\d-_]+)/",
 				'/' . $wikiIdRedirects[$wikiId],
 				$_SERVER['REQUEST_URI']
@@ -159,7 +165,7 @@ const doWikiSpecificSetup = ({
 
 			// handle invalid wiki
 			http_response_code(404);
-			die( "No wiki found with ID \\"$wikiId\\"\n" );
+			die( "No wiki found with ID \\"$wikiId\\"\\n" );
 
 		}
 
@@ -212,7 +218,7 @@ const doDebug = ({ allowRequestDebug }: { allowRequestDebug: boolean }) => {
 		elseif ( $wgCommandLineMode && $mezaCommandLineDebug ) {
 			$debug = true;
 		}
-		${requestDebug}
+		${requestDebug ? "\n" + requestDebug + "\n" : ""}
 		else {
 			$debug = false;
 		}
@@ -416,7 +422,9 @@ const doDatabase = ({
 		 *
 		 **/
 		$mezaDatabaseServers = [
-			${allDbServers.map((server) => `\t${server}`).join(",\n")}
+			${allDbServers
+				.map((server) => "'" + serverOrLocalhost(server, thisServer) + "'")
+				.join(",\n\t")}
 		];
 
 		$mezaDatabasePassword = '${wikiAppDbPassword}';
@@ -424,7 +432,7 @@ const doDatabase = ({
 		$mezaThisServer = '${thisServer}';
 
 		$mezaWikiDatabases = [
-			${wikis.map((wiki) => `\t'${wiki.id}' => '${wiki.dbName}'`).join(",\n")}
+			${wikis.map((wiki) => `'${wiki.id}' => '${wiki.dbName}'`).join(",\n")}
 		];
 
 		// even though using $wgDBservers method below, keep $wgDBname per warning in:
@@ -465,16 +473,8 @@ const doDatabase = ({
 		# MySQL table options to use during installation or update
 		$wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
 
-		# Experimental charset support for MySQL 5.0.
-		$wgDBmysql5 = false;
-
 		${primaryWikiConfig}
 		`;
-};
-
-// fixme use this other places
-const serverOrLocalhost = (server: string, thisServer: string): string => {
-	return server === thisServer || server === "localhost" ? "127.0.0.1" : server;
 };
 
 const doGeneralConfig = ({
@@ -510,11 +510,8 @@ const doGeneralConfig = ({
 		$wgSquidServersNoPurge = [
 		${loadBalancers
 			.map((server) => {
-				const s =
-					server === thisServer || server === "localhost"
-						? "127.0.0.1"
-						: server;
-				return "'" + s + "'";
+				const s = serverOrLocalhost(server, thisServer);
+				return "\t'" + s + "'";
 			})
 			.join(",\n")}
 		];
@@ -527,15 +524,12 @@ const doGeneralConfig = ({
 		$wgParserCacheType = CACHE_NONE;
 		$wgMessageCacheType = CACHE_MEMCACHED;
 		$wgMemCachedServers = [
-			${memcachedServers
-				.map((server) => {
-					const s =
-						server === thisServer || server === "localhost"
-							? "127.0.0.1"
-							: server;
-					return `'${s}:11211'`;
-				})
-				.join(",\n")}
+		${memcachedServers
+			.map((server) => {
+				const s = serverOrLocalhost(server, thisServer);
+				return `\t'${s}:11211'`;
+			})
+			.join(",\n")}
 		];
 
 		// memcached is setup and will work for sessions with meza, unless you use
@@ -807,7 +801,7 @@ const doExtensionsSettings = ({
 				.map((server) => {
 					return "'" + serverOrLocalhost(server, thisServer) + "'";
 				})
-				.join(",\n")}
+				.join(",\n\t")}
 		];
 		$wgCirrusSearchWikimediaExtraPlugin['id_hash_mod_filter'] = true;
 		`;
