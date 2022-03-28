@@ -27,7 +27,7 @@ describe("asyncExec()", () => {
 		}
 
 		expect(result.error.killed).toEqual(false);
-		expect(result.error.code).toEqual(1);
+		expect(result.error.code).toBeGreaterThan(0);
 		expect(result.error.signal).toBeNull();
 		expect(result.error.cmd).toEqual("THIS_IS_A_BOGUS_COMMAND");
 
@@ -38,7 +38,8 @@ describe("asyncExec()", () => {
 	});
 
 	test("resolve for a valid command", async () => {
-		const { stdout, stderr } = await asyncExec("dir"); // `dir` is valid DOS and Bash command
+		// `echo` is valid DOS and shell command
+		const { stdout, stderr } = await asyncExec("echo 'asdf'");
 
 		expect(typeof stdout === "string").toEqual(true);
 		expect(stdout.length > 0).toEqual(true);
