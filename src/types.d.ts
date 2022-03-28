@@ -29,3 +29,50 @@ type MWPicardError<E = unknown> = {
 	failed: true;
 	error: E;
 };
+
+type AppError = {
+	errorType: "AppError";
+	msg: string;
+};
+
+type WikiConfig = {
+	id: string;
+
+	/**
+	 * Name of your wiki. This will also be used to generate $wgMetaNamespace. See
+	 *  - https://www.mediawiki.org/wiki/Manual:$wgSitename
+	 *  - https://www.mediawiki.org/wiki/Manual:$wgMetaNamespace
+	 */
+	sitename: string;
+
+	redirectsFrom?: string[];
+	isPrimaryWiki?: boolean;
+	dbName: string;
+};
+
+type PrimaryWiki = { id: string; dbName: string };
+
+type PlatformConfig = {
+	wikis: WikiConfig[];
+	appMediawikiPath: string;
+	appUploadsDirectory: string;
+
+	extensionsFiles: {
+		specifier: string;
+		baseline: string;
+	};
+
+	controllerComposerCmd: string;
+	controllerMediawikiPath: string;
+
+	appMoreConfigPath: string;
+	wikiAppFqdn: string;
+	appCacheDirectory: string;
+
+	dbMaster: string;
+	dbReplicas?: string[];
+
+	loadBalancers: string[];
+	memcachedServers: string[];
+	elasticsearchServers: string[];
+};

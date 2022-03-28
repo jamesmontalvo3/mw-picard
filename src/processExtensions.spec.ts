@@ -1,4 +1,4 @@
-import path from "path";
+import path from "upath";
 import processExtensions from "./processExtensions";
 import * as asyncExecModule from "./asyncExec";
 import {
@@ -10,19 +10,32 @@ import {
 } from "./test-utils";
 
 describe("processExtensions()", () => {
+	afterEach(() => {
+		jest.clearAllMocks();
+		jest.restoreAllMocks();
+	});
+
 	test("error when loading YAML throws", async () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
 		makeReadFileSpy(false);
 		expect(
 			await processExtensions({
 				baseline: "/path/to/baseline.yml",
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
-		).toEqual({ status: "ERROR" });
+		).toEqual({
+			msg: 'Error loading extension config. Error was: "testing reject readFile"',
+			status: "ERROR",
+		});
+		expect(consoleErrorSpy).toHaveBeenCalledWith("testing reject readFile");
 	});
 
 	test("error when baseline isn't ExtensionConfig[]", async () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
 		makeReadFileSpy({
 			"/path/to/baseline.yml": `[{ "name": "MyExt" }]`, // invalid baseline
 			"/path/to/specifier.yml": `[{ "name": "MyExt" }]`, // valid specifier
@@ -33,9 +46,16 @@ describe("processExtensions()", () => {
 				baseline: "/path/to/baseline.yml",
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
-		).toEqual({ status: "ERROR" });
+		).toEqual({ msg: "baseline invalid", status: "ERROR" });
+		expect(consoleErrorSpy.mock.calls).toEqual([
+			["Expected name to be string"],
+			["WikiConfig needs either .repo or .composer value as string"],
+			['Not a valid WikiConfig: {"name":"MyExt"}'],
+		]);
 	});
 
 	test("error when baseline isn't PartialExtensionConfig[]", async () => {
@@ -49,9 +69,11 @@ describe("processExtensions()", () => {
 				baseline: "/path/to/baseline.yml",
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
-		).toEqual({ status: "ERROR" });
+		).toEqual({ msg: "specifier invalid", status: "ERROR" });
 	});
 
 	test("indicate changed when a baseline+specifier are valid with no prior install", async () => {
@@ -76,7 +98,9 @@ describe("processExtensions()", () => {
 				baseline: baselinePath,
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ status: "CHANGED", runUpdatePhp: false });
 	});
@@ -101,13 +125,15 @@ describe("processExtensions()", () => {
 		});
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: false });
-		makeAsyncRimrafSpy({ throws: false }); // make async rimraf same as others fixme
+		makeAsyncRimrafSpy({ throws: false });
 		expect(
 			await processExtensions({
 				baseline: baselinePath,
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ status: "NOCHANGE" });
 	});
@@ -144,7 +170,9 @@ describe("processExtensions()", () => {
 				baseline: baselinePath,
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ status: "ERROR" });
 	});

@@ -1,0 +1,101 @@
+variables:
+  CURRENT_NODE_VERSION_IMAGE: "node:16-alpine"
+  FUTURE_NODE_VERSION_IMAGE: "node:17-alpine"
+
+default:
+  artifacts:
+    # Aggressively expire artifacts. The latest for any branch never expires
+    expire_in: 1 day
+  timeout: 10 minutes
+  tags: ["docker", "linux"]
+  image: "$CURRENT_NODE_VERSION_IMAGE"
+
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
+# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
+# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
+stages:
+  - nostage
+sast:
+  stage: nostage
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
+install-dependencies:
+  stage: nostage
+  script:
+    - npm ci
+  artifacts:
+    paths:
+      - ./node_modules/*
+
+build:
+  stage: nostage
+  needs: ["install-dependencies"]
+  script:
+    - echo "Node=$(node --version) NPM=$(npm --version)"
+    - npm run build
+  artifacts:
+    when: always
+    paths:
+      - ./dist/*
+
+test:
+  stage: nostage
+  needs: ["install-dependencies", "build"]
+  script:
+    - npm run test:coverage
+  artifacts:
+    reports:
+      cobertura: ./coverage/cobertura-coverage.xml
+      junit:
+        - junit.xml
+    paths:
+      - ./coverage/*
+
+lint-and-type-check:
+  stage: nostage
+  needs: ["install-dependencies"]
+  allow_failure: true # <-- just for now FIXME!
+  script:
+    - npm run lint
+    - npm run type-check
+
+test-nodenext:
+  stage: nostage
+  allow_failure: true
+  image: $FUTURE_NODE_VERSION_IMAGE
+  needs: ["install-dependencies", "build"]
+  script:
+    - npm run test
+
+docker-build:
+  stage: nostage
+  variables:
+    # When using dind, use the overlayfs driver for improved performance.
+    DOCKER_DRIVER: overlay2
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  needs:
+    - "build"
+    - job: "lint-and-type-check"
+      artifacts: false
+    - job: "test"
+      artifacts: false
+  retry: 2
+  before_script:
+    - docker info
+    - echo $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+  script:
+    - >
+      if [ "${CI_COMMIT_REF_SLUG}" != "main" ]; then
+        IMAGE_NAME="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+      else
+        IMAGE_NAME="${CI_REGISTRY_IMAGE}"
+      fi
+    - docker build --pull -t "${IMAGE_NAME}" .
+    - docker push "${IMAGE_NAME}"

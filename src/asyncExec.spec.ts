@@ -1,11 +1,12 @@
-import { asyncExec, ExecError } from "./asyncExec";
+import { ExecaReturnValue } from "execa";
+import { asyncExec } from "./asyncExec";
 
 describe("asyncExec()", () => {
 	test("reject/throw for a bad command 2222222222", async () => {
 		let result: {
 			stdout?: string;
 			stderr?: string;
-			error?: ExecError;
+			error?: ExecaReturnValue;
 		};
 		try {
 			const res = await asyncExec("THIS_IS_A_BOGUS_COMMAND");
@@ -13,8 +14,8 @@ describe("asyncExec()", () => {
 		} catch (err) {
 			const error =
 				typeof err === "object" && err !== null
-					? (err as ExecError)
-					: ({} as ExecError);
+					? (err as ExecaReturnValue)
+					: ({} as ExecaReturnValue);
 			result = { error };
 		}
 
@@ -27,9 +28,8 @@ describe("asyncExec()", () => {
 		}
 
 		expect(result.error.killed).toEqual(false);
-		expect(result.error.code).toEqual(1);
-		expect(result.error.signal).toBeNull();
-		expect(result.error.cmd).toEqual("THIS_IS_A_BOGUS_COMMAND");
+		expect(result.error.signal).toBeUndefined();
+		expect(result.error.command).toEqual("THIS_IS_A_BOGUS_COMMAND");
 
 		// stdout and stderr on Error object, not from try {...}
 		expect(result.error.stdout).toEqual("");
@@ -38,7 +38,10 @@ describe("asyncExec()", () => {
 	});
 
 	test("resolve for a valid command", async () => {
-		const { stdout, stderr } = await asyncExec("dir"); // `dir` is valid DOS and Bash command
+		// `echo` is valid DOS and shell command
+		const { stdout, stderr } = await asyncExec(
+			"echo 'this is a test of asyncExec' && echo 'another'"
+		);
 
 		expect(typeof stdout === "string").toEqual(true);
 		expect(stdout.length > 0).toEqual(true);

@@ -1,9 +1,16 @@
 import dedent from "dedent-js";
+import { verifyAllUnique } from "./util";
 
-// fixme use this other places
-// fixme docs
-const serverOrLocalhost = (server: string, thisServer: string): string => {
-	return server === thisServer || server === "localhost" ? "127.0.0.1" : server;
+/**
+ * Either return the server name provided or provide 127.0.0.1 if server is localhost or 127.0.0.1
+ *
+ * @param server name of the server you're checking or 127.0.0.1
+ * @returns
+ */
+const serverOrLocalhost = (server: string): string => {
+	return server === "localhost" || server === "127.0.0.1"
+		? "127.0.0.1"
+		: server;
 };
 
 const doIntro = () => {
@@ -19,68 +26,16 @@ const doIntro = () => {
 		 *  TABLE OF CONTENTS
 		 *
 		 *    1) WIKI-SPECIFIC SETUP
-		 *    2) DEBUG
+		 *    2) (RESERVED)
 		 *    3) PATH SETUP
-		 *    4) EMAIL
+		 *    4) (RESERVED)
 		 *    5) DATABASE SETUP
 		 *    6) GENERAL CONFIGURATION
-		 *    7) PERMISSIONS
+		 *    7) (RESERVED)
 		 *    8) EXTENSION SETTINGS
-		 *    9) LOAD OVERRIDES
+		 *    9) LOAD POST LOCAL SETTINGS
 		 *
 		 **/`;
-};
-
-// move totypes.d.ts fixme
-type AppError = {
-	errorType: "AppError";
-	msg: string;
-};
-
-type WikiConfig = {
-	id: string;
-	redirectsFrom?: string[];
-	isPrimaryWiki?: boolean;
-	dbName: string;
-};
-
-type PrimaryWiki = { id: string; dbName: string };
-
-type MezaAuthType =
-	| "none"
-	| "anon-read"
-	| "anon-edit"
-	| "user-edit"
-	| "user-read"
-	| "viewer-read";
-
-type PlatformConfig = {
-	wikis: WikiConfig[];
-	pathToWikis: string; // fixme from which server/container?
-	mediawikiPath: string;
-
-	mezaAuthType: MezaAuthType;
-	phpConfigPath: string;
-	allowRequestDebug: boolean;
-	wikiAppFqdn: string;
-	enableEmail: boolean;
-	wgPasswordSender: string;
-	wgEmergencyContact: string;
-	wgSecretKey: string;
-	rootWgCacheDirectory: string;
-	wgAllowExternalImages: boolean;
-	wgAllowImageTag: boolean;
-	wgLocaltimezone: string;
-
-	dbMaster: string;
-	dbReplicas?: string[];
-
-	wikiAppDbPassword: string;
-	wikiAppDbUser: string;
-	thisServer: string; // name fixme
-	loadBalancers: string[];
-	memcachedServers: string[];
-	elasticsearchServers: string[];
 };
 
 const doRedirects = (wikis: WikiConfig[]) => {
@@ -122,9 +77,7 @@ const doRedirects = (wikis: WikiConfig[]) => {
 
 const doWikiSpecificSetup = ({
 	wikis,
-	pathToWikis,
-	mezaAuthType,
-	phpConfigPath,
+	appMoreConfigPath,
 }: PlatformConfig): string => {
 	const redirects = doRedirects(wikis);
 
@@ -137,10 +90,8 @@ const doWikiSpecificSetup = ({
 		 **/
 		if( $wgCommandLineMode ) {
 
-			$mezaWikiEnvVarName='WIKI';
-
-			// get $wikiId from environment variable
-			$wikiId = getenv( $mezaWikiEnvVarName );
+			// get $wikiId from environment variable WIKI
+			$wikiId = getenv( 'WIKI' );
 
 		}
 		else {
@@ -153,11 +104,15 @@ const doWikiSpecificSetup = ({
 
 		${redirects}
 
-		// get all directory names in /wikis, minus the first two: . and ..
-		$wikis = array_slice( scandir( "${pathToWikis}" ), 2 );
+		$mezaWikis = [
+			${wikis
+				.map(({ id, sitename }) => {
+					return `'${id}' => ['sitename' => '${sitename}']`;
+				})
+				.join(",\n")}
+		];
 
-
-		if ( ! in_array( $wikiId, $wikis ) ) {
+		if ( ! isset( $mezaWikis[$wikiId] ) ) {
 
 			// handle invalid wiki
 			http_response_code(404);
@@ -165,115 +120,25 @@ const doWikiSpecificSetup = ({
 
 		}
 
-		// Set an all-wiki auth type, which individual wikis can override
-		$mezaAuthType = '${mezaAuthType}';
+		$wgSitename = $mezaWikis[$wikiId]['sitename'];
 
 		#
 		# PRE LOCAL SETTINGS
 		#
 		#    (1) Load all PHP files in preLocalSettings.d for all wikis
-		foreach ( glob("${phpConfigPath}/preLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/preLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}
 		#    (2) Load all PHP files in preLocalSettings.d for this wiki
-		foreach ( glob("${phpConfigPath}/wikis/$wikiId/preLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/wikis/$wikiId/preLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}`;
 };
 
-const doDebug = ({ allowRequestDebug }: { allowRequestDebug: boolean }) => {
-	const requestDebug = allowRequestDebug
-		? dedent`
-		// allows appending ?requestDebug=true to any URL to see debug. Disable this in production
-		elseif ( isset( $_GET['requestDebug'] ) ) {
-			$debug = true;
-		}
-		`
-		: "";
-
-	return dedent`
-		/**
-		 *  2) DEBUG
-		 *
-		 *  Options to enable debug are below. The lowest-impact solution should be
-		 *  chosen. Options are listed from least impact to most impact.
-		 *    1) Add to the URI you're requesting requestDebug=true to enable debug
-		 *       for just that request.
-		 *    2) Set $mezaCommandLineDebug = true; for debug on the command line.
-		 *       This is the default, which can be overriden in preLocalSettings_allWiki.php.
-		 *    5) Set $mezaForceDebug = true; to turn on debug for all users and wikis
-		 **/
-		$mezaCommandLineDebug = true; // always want debug on command line
-		$mezaForceDebug = false; // this is here to be able to alter LocalSettings
-
-
-		if ( $mezaForceDebug ) {
-			$debug = true;
-		}
-
-		elseif ( $wgCommandLineMode && $mezaCommandLineDebug ) {
-			$debug = true;
-		}
-		${requestDebug ? "\n" + requestDebug + "\n" : ""}
-		else {
-			$debug = false;
-		}
-
-
-		if ( $debug ) {
-
-			// turn error logging on
-			error_reporting( -1 );
-			ini_set( 'display_errors', 1 );
-			ini_set( 'log_errors', 1 );
-
-			// Output errors to log file
-			ini_set( 'error_log', "$m_meza_data/logs/php/php_errors.log" );
-
-
-			// Displays debug data at the bottom of the content area in a formatted
-			// list below a horizontal line.
-			$wgShowDebug = true;
-
-			// A more elaborative debug toolbar with interactive panels.
-			$wgDebugToolbar = true;
-
-			// Uncaught exceptions will print a complete stack trace to output (instead
-			// of just to logs)
-			$wgShowExceptionDetails = true;
-
-			// SQL statements are dumped to the $wgDebugLogFile (if set) /and/or to
-			// HTML output (if $wgDebugComments is true)
-			$wgDebugDumpSql  = true;
-
-			// If on, some debug items may appear in comments in the HTML output.
-			$wgDebugComments = false;
-
-			// The file name of the debug log, or empty if disabled. wfDebug() appends
-			// to this file.
-			$wgDebugLogFile = "/opt/data-meza/logs/mw-debug.log";
-
-			// If true, show a backtrace for database errors.
-			$wgShowDBErrorBacktrace = true;
-
-			// Shows the actual query when errors occur (in HTML, I think. Not logs)
-			$wgShowSQLErrors = true;
-
-		}
-
-		// production: no error reporting
-		else {
-
-			error_reporting(0);
-			ini_set("display_errors", 0);
-
-		}`;
-};
-
-const doPathSetup = ({ wikiAppFqdn }: Pick<PlatformConfig, "wikiAppFqdn">) => {
-	// @todo: handle auth type from preLocalSettings.php
-	// @todo: handle debug from preLocalSettings_allWikis.php
-
+const doPathSetup = ({
+	wikiAppFqdn,
+	appUploadsDirectory,
+}: Pick<PlatformConfig, "wikiAppFqdn" | "appUploadsDirectory">) => {
 	return dedent`
 		/**
 		 *  3) PATH SETUP
@@ -299,7 +164,7 @@ const doPathSetup = ({ wikiAppFqdn }: Pick<PlatformConfig, "wikiAppFqdn">) => {
 		$wgUploadPath = "$wgScriptPath/img_auth.php";
 
 		// https://www.mediawiki.org/wiki/Manual:$wgUploadDirectory
-		$wgUploadDirectory = "{{ m_uploads_dir }}/$wikiId";
+		$wgUploadDirectory = "${appUploadsDirectory}/$wikiId";
 
 		// https://www.mediawiki.org/wiki/Manual:$wgLogo
 		$wgLogo = "/wikis/$wikiId/config/logo.png";
@@ -317,60 +182,11 @@ const doPathSetup = ({ wikiAppFqdn }: Pick<PlatformConfig, "wikiAppFqdn">) => {
 		$wgResourceBasePath = $wgScriptPath;`;
 };
 
-const doEmail = ({
-	enableEmail,
-	wgPasswordSender,
-	wgEmergencyContact,
-}: Pick<
-	PlatformConfig,
-	"enableEmail" | "wgPasswordSender" | "wgEmergencyContact"
->) => {
-	const globalEnabled = enableEmail
-		? dedent`
-			if ( isset( $mezaEnableWikiEmail ) && $mezaEnableWikiEmail ) {
-				$wgEnableEmail = true;
-			}
-			else {
-				$wgEnableEmail = false;
-			}
-			`
-		: "$wgEnableEmail = false;";
-
-	return dedent`
-		/**
-		 *  4) EMAIL
-		 *
-		 *  Email configuration
-		 **/
-		${globalEnabled}
-
-		## UPO means: this is also a user preference option
-		$wgEnableUserEmail = $wgEnableEmail; # UPO
-		$wgEnotifUserTalk = $wgEnableEmail; # UPO
-		$wgEnotifWatchlist = $wgEnableEmail; # UPO
-		$wgEmailAuthentication = $wgEnableEmail;
-
-		$wgPasswordSender = '${wgPasswordSender}';
-		$wgEmergencyContact = '${wgEmergencyContact}';
-		`;
-};
-
 const doDatabase = ({
-	dbMaster, // $databaseServer === $mezaThisServer ?: $databaseServer = 'localhost';
+	dbMaster,
 	dbReplicas,
-	wikiAppDbPassword,
-	wikiAppDbUser,
-	thisServer, // FIXME
 	wikis,
-}: Pick<
-	PlatformConfig,
-	| "wikis"
-	| "dbMaster"
-	| "dbReplicas"
-	| "wikiAppDbPassword"
-	| "wikiAppDbUser"
-	| "thisServer"
->) => {
+}: Pick<PlatformConfig, "wikis" | "dbMaster" | "dbReplicas">) => {
 	let primaryWiki: PrimaryWiki | undefined;
 	for (const wiki of wikis) {
 		if (wiki.isPrimaryWiki) {
@@ -411,6 +227,16 @@ const doDatabase = ({
 
 	const allDbServers = [dbMaster, ...(dbReplicas || [])];
 
+	const appDbPassword = process.env.APP_DB_PASSWORD;
+	const appDbUser = process.env.APP_DB_USER;
+
+	if (!appDbPassword) {
+		throw new Error("Must set environment variable APP_DB_PASSWORD");
+	}
+	if (!appDbUser) {
+		throw new Error("Must set environment variable APP_DB_USER");
+	}
+
 	return dedent`
 		/**
 		 *  5) DATABASE SETUP
@@ -419,13 +245,12 @@ const doDatabase = ({
 		 **/
 		$mezaDatabaseServers = [
 			${allDbServers
-				.map((server) => "'" + serverOrLocalhost(server, thisServer) + "'")
+				.map((server) => "'" + serverOrLocalhost(server) + "'")
 				.join(",\n\t")}
 		];
 
-		$mezaDatabasePassword = '${wikiAppDbPassword}';
-		$mezaDatabaseUser = '${wikiAppDbUser}';
-		$mezaThisServer = '${thisServer}';
+		$mezaDatabasePassword = '${appDbPassword}';
+		$mezaDatabaseUser = '${appDbUser}';
 
 		$mezaWikiDatabases = [
 			${wikis.map((wiki) => `'${wiki.id}' => '${wiki.dbName}'`).join(",\n")}
@@ -447,9 +272,6 @@ const doDatabase = ({
 
 		$wgDBservers = array();
 		foreach( $mezaDatabaseServers as $databaseServer ) {
-			if ( $databaseServer === $mezaThisServer ) {
-				$databaseServer = 'localhost';
-			}
 			$wgDBservers[] = array(
 				'host' => $databaseServer,
 				'dbname' => $wgDBname,
@@ -476,23 +298,17 @@ const doDatabase = ({
 const doGeneralConfig = ({
 	loadBalancers,
 	memcachedServers,
-	thisServer,
-	wgSecretKey,
-	rootWgCacheDirectory,
-	wgAllowExternalImages,
-	wgAllowImageTag,
-	wgLocaltimezone,
+	appCacheDirectory,
 }: Pick<
 	PlatformConfig,
-	| "thisServer"
-	| "loadBalancers"
-	| "memcachedServers"
-	| "wgSecretKey"
-	| "rootWgCacheDirectory"
-	| "wgAllowExternalImages"
-	| "wgAllowImageTag"
-	| "wgLocaltimezone"
+	"loadBalancers" | "memcachedServers" | "appCacheDirectory"
 >) => {
+	const wgSecretKey = process.env.WG_SECRET_KEY;
+
+	if (!wgSecretKey) {
+		throw new Error("Must set environment variable WG_SECRET_KEY");
+	}
+
 	return dedent`
 		/**
 		 *  6) GENERAL CONFIGURATION
@@ -501,12 +317,12 @@ const doGeneralConfig = ({
 		 *
 		 **/
 		// proxy setup
-		$wgUseSquid = true;
+		$wgUseCdn = true;
 		$wgUsePrivateIPs = true;
-		$wgSquidServersNoPurge = [
+		$wgCdnServersNoPurge = [
 		${loadBalancers
 			.map((server) => {
-				const s = serverOrLocalhost(server, thisServer);
+				const s = serverOrLocalhost(server);
 				return "\t'" + s + "'";
 			})
 			.join(",\n")}
@@ -522,7 +338,7 @@ const doGeneralConfig = ({
 		$wgMemCachedServers = [
 		${memcachedServers
 			.map((server) => {
-				const s = serverOrLocalhost(server, thisServer);
+				const s = serverOrLocalhost(server);
 				return `\t'${s}:11211'`;
 			})
 			.join(",\n")}
@@ -538,20 +354,8 @@ const doGeneralConfig = ({
 		// AuthPlugin/AuthManager.
 		$wgSessionCacheType = CACHE_MEMCACHED;
 
-		## To enable image uploads, make sure the 'images' directory
-		## is writable, then set this to true:
-		$wgEnableUploads = true;
-		$wgMaxUploadSize = 1024*1024*100; // 100 MB
 		$wgUseImageMagick = true;
 		$wgImageMagickConvertCommand = "/usr/bin/convert";
-
-		# InstantCommons allows wiki to use images from http://commons.wikimedia.org
-		$wgUseInstantCommons = false;
-
-		## If you use ImageMagick (or any other shell command) on a
-		## Linux server, this will need to be set to the name of an
-		## available UTF-8 locale
-		$wgShellLocale = "en_US.utf8";
 
 		## If you want to use image uploads under safe mode,
 		## create the directories images/archive, images/thumb and
@@ -559,36 +363,11 @@ const doGeneralConfig = ({
 		## this, if it's not already uncommented:
 		$wgHashedUploadDirectory = true;
 
-		## Set $wgCacheDirectory to a writable directory on the web server
-		## to make your wiki go slightly faster. The directory should not
-		## be publically accessible from the web.
-		#$wgCacheDirectory = "$IP/cache";
-
-		# Site language code, should be one of the list in ./languages/Names.php
-		$wgLanguageCode = "en";
-
 		# https://www.mediawiki.org/wiki/Manual:$wgSecretKey
 		$wgSecretKey = '${wgSecretKey}';
 
-		## For attaching licensing metadata to pages, and displaying an
-		## appropriate copyright notice / icon. GNU Free Documentation
-		## License and Creative Commons licenses are supported so far.
-		$wgRightsPage = ""; # Set to the title of a wiki page that describes your license/copyright
-		$wgRightsUrl = "";
-		$wgRightsText = "";
-		$wgRightsIcon = "";
-
 		# Path to the GNU diff3 utility. Used for conflict resolution.
 		$wgDiff3 = "/usr/bin/diff3";
-
-		## Default skin: you can change the default skin. Use the internal symbolic
-		## names, ie 'vector', 'monobook': see MezaCoreSkins.yml for choices.
-		$wgDefaultSkin = "vector";
-
-		// allows users to remove the page title.
-		// https://www.mediawiki.org/wiki/Manual:$wgRestrictDisplayTitle
-		$wgRestrictDisplayTitle = false;
-
 
 		/**
 		 * Directory for caching data in the local filesystem. Should not be accessible
@@ -603,199 +382,34 @@ const doGeneralConfig = ({
 		 *  - https://www.mediawiki.org/wiki/Manual:$wgCacheDirectory
 		 *  - https://www.mediawiki.org/wiki/Manual:$wgLocalisationCacheConf
 		 */
-		$wgCacheDirectory = "${rootWgCacheDirectory}/$wikiId";
-
-		// opens external links in new window
-		$wgExternalLinkTarget = '_blank';
-
-		// added this line to allow linking. specifically to Imagery Online.
-		$wgAllowExternalImages = ${wgAllowExternalImages ? "true" : "false"};
-		$wgAllowImageTag = ${wgAllowImageTag ? "true" : "false"};
-
-		$wgVectorUseSimpleSearch = true;
-
-		//$wgDefaultUserOptions['useeditwarning'] = 1;
-
-		// disable page edit warning (edit warning affect Semantic Forms)
-		$wgVectorFeatures['editwarning']['global'] = false;
-
-		$wgDefaultUserOptions['rememberpassword'] = 1;
-
-		// users watch pages by default (they can override in settings)
-		$wgDefaultUserOptions['watchdefault'] = 1;
-		$wgDefaultUserOptions['watchmoves'] = 1;
-		$wgDefaultUserOptions['watchdeletion'] = 1;
-		$wgDefaultUserOptions['watchcreations'] = 1;
-
-		// fixes login issue for some users (login issue fixed in MW version 1.18.1 supposedly)
-		$wgDisableCookieCheck = true;
-
-		#Set Default Timezone
-		$wgLocaltimezone = '${wgLocaltimezone}';
-		$oldtz = getenv("TZ");
-		putenv("TZ=$wgLocaltimezone");
-
-		$wgMaxImageArea = 1.25e10; // Images on [[Snorkel]] fail without this
-		// $wgMemoryLimit = 500000000; //Default is 50M. This is 500M.
-
-		// Increase from default setting for large form
-		// See https://www.mediawiki.org/wiki/Extension_talk:Semantic_Forms/Archive_April_to_June_2012#Error:_Backtrace_limit_exceeded_during_parsing
-		// If set to 10million, errors are seen when using Edit with form on mission pages like 41S
-		// ini_set( 'pcre.backtrack_limit', 10000000 ); //10million
-		ini_set( 'pcre.backtrack_limit', 1000000000 ); //1 billion
-
-		// Allowed file types
-		$wgFileExtensions = array(
-			'aac',
-			'bmp',
-			'docx',
-			'gif',
-			'jpg',
-			'jpeg',
-			'mpp',
-			'mp3',
-			'msg',
-			'odg',
-			'odp',
-			'ods',
-			'odt',
-			'pdf',
-			'png',
-			'pptx',
-			'ps',
-			'svg',
-			'tiff',
-			'txt',
-			'xlsx',
-			'zip'
-		);
-
-		// Tell Universal Language Selector not to try to guess language based upon IP
-		// address. This (a) isn't likely needed in enterprise use cases and (b) fails
-		// anyway due to outdated URLs or firewall rules.
-		$wgULSGeoService = false;
-
-		$wgNamespacesWithSubpages[NS_MAIN] = true;
-
-		$wgUseRCPatrol = false;`;
-};
-
-export const doPermissions = ({
-	mezaAuthType,
-}: Pick<PlatformConfig, "mezaAuthType">): string => {
-	if (mezaAuthType === "none") {
-		return "";
-	}
-
-	const intro = dedent`
-		/**
-		 *  7) PERMISSIONS
-		 *
-		 *
-		 *
-		 **/
-		# Prevent new user registrations except by sysops
-		$wgGroupPermissions['*']['createaccount'] = false;
-		`;
-
-	let perms: string;
-	if (mezaAuthType === "anon-edit") {
-		perms = `
-			// allow anonymous read
-			$wgGroupPermissions['*']['read'] = true;
-			$wgGroupPermissions['user']['read'] = true;
-
-			// allow anonymous write
-			$wgGroupPermissions['*']['edit'] = true;
-			$wgGroupPermissions['user']['edit'] = true;`;
-	} else if (mezaAuthType === "anon-read") {
-		perms = `
-			// allow anonymous read
-			$wgGroupPermissions['*']['read'] = true;
-			$wgGroupPermissions['user']['read'] = true;
-
-			// do not allow anonymous write (must be registered user)
-			$wgGroupPermissions['*']['edit'] = false;
-			$wgGroupPermissions['user']['edit'] = true;`;
-	} else if (mezaAuthType === "user-edit") {
-		perms = `
-			// no anonymous
-			$wgGroupPermissions['*']['read'] = false;
-			$wgGroupPermissions['*']['edit'] = false;
-
-			// users read and write
-			$wgGroupPermissions['user']['read'] = true;
-			$wgGroupPermissions['user']['edit'] = true;`;
-	} else if (mezaAuthType === "user-read") {
-		perms = `
-			// no anonymous
-			$wgGroupPermissions['*']['read'] = false;
-			$wgGroupPermissions['*']['edit'] = false;
-
-			// users read NOT write, but can talk
-			$wgGroupPermissions['user']['read'] = true;
-			$wgGroupPermissions['user']['edit'] = false;
-			$wgGroupPermissions['user']['talk'] = true;
-
-			$wgGroupPermissions['Contributor'] = $wgGroupPermissions['user'];
-			$wgGroupPermissions['Contributor']['edit'] = true;`;
-	} else {
-		// mezaAuthType === "viewer-read"
-		perms = `
-			// no anonymous or ordinary users
-			$wgGroupPermissions['*']['read'] = false;
-			$wgGroupPermissions['*']['edit'] = false;
-			$wgGroupPermissions['user']['read'] = false;
-			$wgGroupPermissions['user']['edit'] = false;
-
-			// create the Viewer group with read permissions
-			$wgGroupPermissions['Viewer'] = $wgGroupPermissions['user'];
-			$wgGroupPermissions['Viewer']['read'] = true;
-			$wgGroupPermissions['Viewer']['talk'] = true;
-
-			// also explicitly give sysop read since you otherwise end up with
-			// a chicken/egg situation prior to giving people Viewer
-			$wgGroupPermissions['sysop']['read'] = true;
-
-			// Create a contributors group that can edit
-			$wgGroupPermissions['Contributor'] = $wgGroupPermissions['user'];
-			$wgGroupPermissions['Contributor']['edit'] = true;`;
-	}
-
-	return intro + "\n\n" + dedent(perms);
+		$wgCacheDirectory = "${appCacheDirectory}/$wikiId";`;
 };
 
 const doExtensionsSettings = ({
-	mediawikiPath,
-	thisServer,
+	appMediawikiPath,
 	elasticsearchServers,
-}: Pick<
-	PlatformConfig,
-	"mediawikiPath" | "thisServer" | "elasticsearchServers"
->) => {
+}: Pick<PlatformConfig, "appMediawikiPath" | "elasticsearchServers">) => {
 	return dedent`
 		/**
 		 *  8) EXTENSION SETTINGS
 		 *
-		 *  Extensions defined in meza core and meza local yaml files, which are used to  *  load the extensions via Git or Composer, and which generate the PHP files
-		 *  below.
+		 *  Load separate file that includes all extensions to be loaded
 		 */
 
-		require_once "${mediawikiPath}/extensions/ExtensionSettings.php";
+		require_once "${appMediawikiPath}/extensions/ExtensionSettings.php";
 
 
 		/**
 		 * Extension:CirrusSearch
 		 *
-		 * CirrusSearch cluster(s) are defined based upon Ansible hosts file and thus
-		 * cannot be easily added to base-extensions.yml. As such, CirrusSearch config
-		 * is included directly in LocalSettings.php.j2
+		 * CirrusSearch cluster(s) need to be referenced, which is easier to do here rather than in
+		 * the CirrusSearch config in ExtensionSettings.php
 		 */
 		$wgSearchType = 'CirrusSearch';
 		$wgCirrusSearchClusters['default'] = [
 			${elasticsearchServers
 				.map((server) => {
-					return "'" + serverOrLocalhost(server, thisServer) + "'";
+					return "'" + serverOrLocalhost(server) + "'";
 				})
 				.join(",\n\t")}
 		];
@@ -804,8 +418,8 @@ const doExtensionsSettings = ({
 };
 
 const doLoadOverrides = ({
-	phpConfigPath,
-}: Pick<PlatformConfig, "phpConfigPath">) => {
+	appMoreConfigPath,
+}: Pick<PlatformConfig, "appMoreConfigPath">) => {
 	return dedent`
 		/**
 		 *  9) LOAD POST LOCAL SETTINGS
@@ -815,39 +429,22 @@ const doLoadOverrides = ({
 		 *
 		 **/
 		#    (1) Load all PHP files in postLocalSettings.d for all wikis
-		foreach ( glob("${phpConfigPath}/postLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/postLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}
 		#    (2) Load all PHP files in postLocalSettings.d for this wiki
-		foreach ( glob("${phpConfigPath}/wikis/$wikiId/postLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/wikis/$wikiId/postLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}`;
 };
 
-const verifyAllUnique = (arr: string[]): undefined | AppError[] => {
-	const errors: AppError[] = [];
-
-	const alreadyFoundValue: Record<string, true> = {};
-	for (let i = 0; i < arr.length; i++) {
-		if (alreadyFoundValue[arr[i]]) {
-			errors.push({
-				errorType: "AppError",
-				msg: `Wiki ID or redirect "${arr[i]}" found more than once`,
-			});
-		} else {
-			alreadyFoundValue[arr[i]] = true;
-		}
-	}
-	if (errors.length) {
-		return errors;
-	}
-};
-
-const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
+const validateWikis = (
+	wikis: WikiConfig[]
+): undefined | { errors: AppError[] } => {
 	const idsAndRedirects: string[] = [];
 
 	let primaryWiki: string | undefined;
-	const errors: AppError[] = [];
+	const errObject: { errors: AppError[] } = { errors: [] };
 
 	for (const wiki of wikis) {
 		idsAndRedirects.push(wiki.id);
@@ -856,7 +453,7 @@ const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
 		}
 
 		if (wiki.isPrimaryWiki && primaryWiki) {
-			errors.push({
+			errObject.errors.push({
 				errorType: "AppError",
 				msg: `Tried to set ${wiki.id} as primary wiki when already set to ${primaryWiki}`,
 			});
@@ -867,34 +464,30 @@ const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
 
 	const uniqueErrors = verifyAllUnique(idsAndRedirects);
 	if (uniqueErrors) {
-		errors.push(...uniqueErrors);
+		errObject.errors.push(...uniqueErrors);
 	}
 
-	if (errors.length) {
-		return errors;
+	if (errObject.errors.length) {
+		return errObject;
 	}
 };
 
 const doLocalSettings = (
 	config: PlatformConfig
 ): string | { errors: AppError[] } => {
-	const { allowRequestDebug, mezaAuthType, wikis } = config;
+	const { wikis } = config;
 
-	const wikiErrors = validateWikis(wikis);
-	if (wikiErrors) {
-		return { errors: wikiErrors };
-		// fixme look for other errors, besides validateWiki() errors, first?
+	const err = validateWikis(wikis);
+	if (err && err.errors.length) {
+		return { errors: err.errors };
 	}
 
 	return [
 		doIntro(),
 		doWikiSpecificSetup(config),
-		doDebug({ allowRequestDebug }),
 		doPathSetup(config),
-		doEmail(config),
 		doDatabase(config),
 		doGeneralConfig(config),
-		doPermissions({ mezaAuthType }),
 		doExtensionsSettings(config),
 		doLoadOverrides(config),
 	].join("\n\n\n");

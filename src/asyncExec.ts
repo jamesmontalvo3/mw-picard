@@ -1,13 +1,28 @@
-import util from "util";
-import { exec } from "child_process";
+import execa, { ExecaReturnValue } from "execa";
 
-export type ExecError = {
-	killed: boolean;
-	code: number;
-	signal: unknown;
-	cmd: string;
-	stdout: string;
-	stderr: string;
-	stack: string;
+const runCmd = (
+	cmd: string,
+	cwd?: string
+): Promise<ExecaReturnValue<string>> => {
+	const subprocess = execa.command(cmd, { cwd });
+	subprocess.stdout?.pipe(process.stdout);
+	subprocess.stderr?.pipe(process.stderr);
+
+	return subprocess;
 };
-export const asyncExec = util.promisify(exec);
+
+export const asyncExec = async (
+	command: string,
+	cwd?: string
+): Promise<ExecaReturnValue<string>> => {
+	const commands = command.split("&&").map((cmd) => cmd.trim());
+
+	let finalResult: ExecaReturnValue<string> = await runCmd(commands[0], cwd);
+
+	// run additional commands if they exist
+	for (let i = 1; i < commands.length; i++) {
+		finalResult = await runCmd(commands[i], cwd);
+	}
+
+	return finalResult;
+};
