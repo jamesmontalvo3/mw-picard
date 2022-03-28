@@ -128,6 +128,8 @@ const doWikiSpecificSetup = ({
 }: PlatformConfig): string => {
 	const redirects = doRedirects(wikis);
 
+	// FIXME standardize wikiId....something built into MediaWiki now?
+
 	return dedent`
 		/**
 		 *  1) WIKI-SPECIFIC SETUP
@@ -883,7 +885,6 @@ const doLocalSettings = (
 	const wikiErrors = validateWikis(wikis);
 	if (wikiErrors) {
 		return { errors: wikiErrors };
-		// fixme look for other errors, besides validateWiki() errors, first?
 	}
 
 	return [

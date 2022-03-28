@@ -18,7 +18,6 @@ describe("doLocalSettings()", () => {
 		);
 	};
 
-	// FIXME name
 	test("case 1: handle typical wiki", async () => {
 		const expected = await loadLocalSettingsExpectedVals(1);
 		expect(
