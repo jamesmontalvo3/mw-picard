@@ -325,9 +325,9 @@ $wgSharedTables = array(
  *
  **/
 // proxy setup
-$wgUseSquid = true;
+$wgUseCdn = true;
 $wgUsePrivateIPs = true;
-$wgSquidServersNoPurge = [
+$wgCdnServersNoPurge = [
 	'lb1.example.com',
 	'lb2.example.com'
 ];

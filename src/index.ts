@@ -1,13 +1,6 @@
-import { Command } from "commander";
 import packageJSON from "../package.json";
 import processExtensions from "./processExtensions";
 
-const program = new Command();
-
-program
-	.name("mw-picard")
-	.description("CLI to make MediaWiki config so")
-	.version(packageJSON.version);
 
 type GetExtOptions = {
 	baseline?: string;
@@ -60,3 +53,9 @@ program
 	});
 
 program.parse();
+
+const index = async () => {
+
+}
+
+index()

@@ -280,9 +280,9 @@ $wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
  *
  **/
 // proxy setup
-$wgUseSquid = true;
+$wgUseCdn = true;
 $wgUsePrivateIPs = true;
-$wgSquidServersNoPurge = [
+$wgCdnServersNoPurge = [
 	'127.0.0.1'
 ];
 

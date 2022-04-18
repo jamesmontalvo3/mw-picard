@@ -66,7 +66,7 @@ type PlatformConfig = {
 	enableEmail: boolean;
 	wgPasswordSender: string;
 	wgEmergencyContact: string;
-	wgSecretKey: string;
+	wgSecretKey: string; // FIXME make this env var
 	rootWgCacheDirectory: string;
 	wgAllowExternalImages: boolean;
 	wgAllowImageTag: boolean;
@@ -75,8 +75,8 @@ type PlatformConfig = {
 	dbMaster: string;
 	dbReplicas?: string[];
 
-	wikiAppDbPassword: string;
-	wikiAppDbUser: string;
+	wikiAppDbPassword: string; // FIXME make this env var
+	wikiAppDbUser: string; // FIXME make this env var
 	thisServer: string; // name fixme
 	loadBalancers: string[];
 	memcachedServers: string[];
@@ -495,6 +495,7 @@ const doGeneralConfig = ({
 	| "wgAllowImageTag"
 	| "wgLocaltimezone"
 >) => {
+	// FIXME if loadBalancers && loadBalancers.length, do proxy stuff, else don't do wgUseCdn, etc
 	return dedent`
 		/**
 		 *  6) GENERAL CONFIGURATION
@@ -503,9 +504,9 @@ const doGeneralConfig = ({
 		 *
 		 **/
 		// proxy setup
-		$wgUseSquid = true;
+		$wgUseCdn = true;
 		$wgUsePrivateIPs = true;
-		$wgSquidServersNoPurge = [
+		$wgCdnServersNoPurge = [
 		${loadBalancers
 			.map((server) => {
 				const s = serverOrLocalhost(server, thisServer);

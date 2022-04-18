@@ -1,0 +1,61 @@
+loadBalancers: []
+
+mezaAuthType: anon-edit
+allowRequestDebug: false
+wikiAppFqdn: wiki.example.com
+enableEmail: false
+
+wgPasswordSender: admin@example.com
+wgEmergencyContact: admin@example.com
+wgSecretKey: superlongrandomalphanumeric1234
+wgAllowExternalImages: false
+wgAllowImageTag: false
+wgLocaltimezone: America/Chicago
+
+
+wikis:
+  - id: general
+	  redirectsFrom:
+      - fod
+	  isPrimaryWiki: true
+	  dbName: wiki_fod
+    # imagesDir: fod <-- add this
+  - id: iss
+	  redirectsFrom:
+      - eva
+      - oso
+      - robo
+	  dbName: wiki_iss
+  - id: exploration
+	  dbName: wiki_exploration
+  - id: sandbox
+	  dbName: wiki_sandbox
+
+wikiAppDbPassword: 1234
+wikiAppDbUser: root
+
+#
+# DO NOT CHANGE SETTINGS BELOW
+#
+# These settings are mandated by Meza. You probably don't want
+# to change them unless you really know what you're doing
+#
+
+extensionsFiles:
+  specifier: <e2e>/basic-config/specifier.yml
+  baseline: <e2e>/basic-config/baseline.yml
+
+pathToWikis: <e2e>/basic-output/wikis
+phpConfigPath: <e2e>/basic-output/config
+mediawikiPath: <e2e>/basic-output/mediawiki
+rootWgCacheDirectory: <e2e>/basic-output/cache
+
+
+dbMaster: db
+# dbReplicas: [] # not used on Meza
+memcachedServers:
+  - memcached
+elasticsearchServers:
+  - elasticsearch
+
+thisServer: localhost

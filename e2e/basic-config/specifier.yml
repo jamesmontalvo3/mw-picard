@@ -1,0 +1,8 @@
+---
+- name: ParserFunctions
+- name: WikiEditor
+  config: // Override/remove default config
+- name: SyntaxHighlight_GeSHi
+- name: CodeEditor
+- name: ReplaceText
+  wikis: ["iss", "general"]
