@@ -17,7 +17,7 @@ describe("processExtensions()", () => {
 				baseline: "/path/to/baseline.yml",
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
 			})
 		).toEqual({ status: "ERROR" });
 	});
@@ -33,7 +33,7 @@ describe("processExtensions()", () => {
 				baseline: "/path/to/baseline.yml",
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
 			})
 		).toEqual({ status: "ERROR" });
 	});
@@ -49,7 +49,7 @@ describe("processExtensions()", () => {
 				baseline: "/path/to/baseline.yml",
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
 			})
 		).toEqual({ status: "ERROR" });
 	});
@@ -76,7 +76,7 @@ describe("processExtensions()", () => {
 				baseline: baselinePath,
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
 			})
 		).toEqual({ status: "CHANGED", runUpdatePhp: false });
 	});
@@ -107,7 +107,7 @@ describe("processExtensions()", () => {
 				baseline: baselinePath,
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
 			})
 		).toEqual({ status: "NOCHANGE" });
 	});
@@ -144,7 +144,7 @@ describe("processExtensions()", () => {
 				baseline: baselinePath,
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				controllerComposerCmd: "/path/to/composer",
 			})
 		).toEqual({ status: "ERROR" });
 	});

@@ -11,7 +11,7 @@ type ProcessExtensionsProps = {
 	baseline: string;
 	specifier: string;
 	mediawiki: string;
-	composerCmd: string;
+	controllerComposerCmd: string;
 };
 
 const loadYamlFile = async (
@@ -77,8 +77,8 @@ const processExtensions = async (
 	// 2. Ditto for skins
 	// 2a. Remove directories in extensions/ and skins/ that don't belong ???
 	const result = await doExtensions({
-		mediawikiPath: paths.mediawiki,
-		composerCmd: paths.composerCmd,
+		appMediawikiPath: paths.mediawiki,
+		controllerComposerCmd: paths.controllerComposerCmd,
 		extensionsConfig,
 		priorInstallation,
 	});

@@ -63,11 +63,11 @@ if ( isset( $wikiIdRedirects[ $wikiId ] ) ) {
 	exit;
 }
 
-// get all directory names in /wikis, minus the first two: . and ..
-$wikis = array_slice( scandir( "/path/to/wikis" ), 2 );
+$mezaWikis = [
+	'mywiki' => ['sitename' => 'My Wiki', 'authtype' => false]
+];
 
-
-if ( ! in_array( $wikiId, $wikis ) ) {
+if ( ! isset( $mezaWikis[$wikiId] ) ) {
 
 	// handle invalid wiki
 	http_response_code(404);
@@ -75,8 +75,8 @@ if ( ! in_array( $wikiId, $wikis ) ) {
 
 }
 
-// Set an all-wiki auth type, which individual wikis can override
-$mezaAuthType = 'user-edit';
+$wgSitename = $mezaWikis[$wikiId]['sitename'];
+$mezaAuthType = $mezaWikis[$wikiId]['authtype'] ? $mezaWikis[$wikiId]['authtype'] : 'user-edit';
 
 #
 # PRE LOCAL SETTINGS
@@ -193,7 +193,7 @@ $wgScriptPath = "/$wikiId";
 $wgUploadPath = "$wgScriptPath/img_auth.php";
 
 // https://www.mediawiki.org/wiki/Manual:$wgUploadDirectory
-$wgUploadDirectory = "{{ m_uploads_dir }}/$wikiId";
+$wgUploadDirectory = "/path/to/uploads/$wikiId";
 
 // https://www.mediawiki.org/wiki/Manual:$wgLogo
 $wgLogo = "/wikis/$wikiId/config/logo.png";
@@ -301,9 +301,9 @@ $wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
  *
  **/
 // proxy setup
-$wgUseSquid = true;
+$wgUseCdn = true;
 $wgUsePrivateIPs = true;
-$wgSquidServersNoPurge = [
+$wgCdnServersNoPurge = [
 	'127.0.0.1',
 	'lb1.example.com',
 	'lb2.example.com'

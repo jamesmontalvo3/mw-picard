@@ -230,12 +230,12 @@ export const composerLocalJsonify = (composerJson: ComposerJson): string => {
 };
 
 export const doComposerExtensions = async ({
-	mediawikiPath,
-	composerCmd,
+	appMediawikiPath,
+	controllerComposerCmd,
 	extensions,
 }: {
-	mediawikiPath: string;
-	composerCmd: string;
+	appMediawikiPath: string;
+	controllerComposerCmd: string;
 	extensions: ExtensionConfig[];
 }): Promise<boolean> => {
 	const composerJson: ComposerJson = {
@@ -258,7 +258,7 @@ export const doComposerExtensions = async ({
 			);
 		}
 	}
-	const composerJsonPath = path.join(mediawikiPath, "composer.local.json");
+	const composerJsonPath = path.join(appMediawikiPath, "composer.local.json");
 	try {
 		const currentFile = await fsp.readFile(composerJsonPath, "utf-8");
 		const current = JSON.parse(currentFile);
@@ -276,7 +276,7 @@ export const doComposerExtensions = async ({
 	}
 
 	return runCommand(
-		`cd ${mediawikiPath} && ${composerCmd} install && ${composerCmd} update`
+		`cd ${appMediawikiPath} && ${controllerComposerCmd} install && ${controllerComposerCmd} update`
 	);
 };
 
@@ -313,18 +313,18 @@ export type DoExtensionsResult =
 	  };
 
 const doExtensions = async ({
-	mediawikiPath,
-	composerCmd,
+	appMediawikiPath,
+	controllerComposerCmd,
 	extensionsConfig,
 	priorInstallation,
 }: {
-	mediawikiPath: string;
-	composerCmd: string;
+	appMediawikiPath: string;
+	controllerComposerCmd: string;
 	extensionsConfig: ExtensionConfig[];
 	priorInstallation: ExtensionConfig[] | false;
 }): Promise<DoExtensionsResult> => {
-	const skinsPath = path.join(mediawikiPath, "skins");
-	const extensionsPath = path.join(mediawikiPath, "extensions");
+	const skinsPath = path.join(appMediawikiPath, "skins");
+	const extensionsPath = path.join(appMediawikiPath, "extensions");
 
 	const changesMade = !deepEqual(extensionsConfig, priorInstallation);
 	if (!changesMade) {
@@ -396,8 +396,8 @@ const doExtensions = async ({
 	}
 
 	const composerSuccess = await doComposerExtensions({
-		mediawikiPath,
-		composerCmd,
+		appMediawikiPath,
+		controllerComposerCmd,
 		extensions: extensionsConfig,
 	});
 

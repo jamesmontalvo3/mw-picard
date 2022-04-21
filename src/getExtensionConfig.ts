@@ -1,8 +1,4 @@
-const couldBe = <T>(
-	maybe: unknown
-): maybe is Partial<Record<keyof T, unknown>> => {
-	return typeof maybe === "object" && maybe !== null;
-};
+import { couldBe } from "./util";
 
 export const isExtensionConfig = (maybe: unknown): maybe is ExtensionConfig => {
 	return (

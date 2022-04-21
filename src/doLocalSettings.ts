@@ -1,4 +1,5 @@
 import dedent from "dedent-js";
+import { verifyAllUnique } from "./util";
 
 // fixme use this other places
 // fixme docs
@@ -29,58 +30,6 @@ const doIntro = () => {
 		 *    9) LOAD OVERRIDES
 		 *
 		 **/`;
-};
-
-// move totypes.d.ts fixme
-type AppError = {
-	errorType: "AppError";
-	msg: string;
-};
-
-type WikiConfig = {
-	id: string;
-	redirectsFrom?: string[];
-	isPrimaryWiki?: boolean;
-	dbName: string;
-};
-
-type PrimaryWiki = { id: string; dbName: string };
-
-type MezaAuthType =
-	| "none"
-	| "anon-read"
-	| "anon-edit"
-	| "user-edit"
-	| "user-read"
-	| "viewer-read";
-
-type PlatformConfig = {
-	wikis: WikiConfig[];
-	pathToWikis: string; // fixme from which server/container?
-	mediawikiPath: string;
-
-	mezaAuthType: MezaAuthType;
-	phpConfigPath: string;
-	allowRequestDebug: boolean;
-	wikiAppFqdn: string;
-	enableEmail: boolean;
-	wgPasswordSender: string;
-	wgEmergencyContact: string;
-	wgSecretKey: string;
-	rootWgCacheDirectory: string;
-	wgAllowExternalImages: boolean;
-	wgAllowImageTag: boolean;
-	wgLocaltimezone: string;
-
-	dbMaster: string;
-	dbReplicas?: string[];
-
-	wikiAppDbPassword: string;
-	wikiAppDbUser: string;
-	thisServer: string; // name fixme
-	loadBalancers: string[];
-	memcachedServers: string[];
-	elasticsearchServers: string[];
 };
 
 const doRedirects = (wikis: WikiConfig[]) => {
@@ -122,9 +71,8 @@ const doRedirects = (wikis: WikiConfig[]) => {
 
 const doWikiSpecificSetup = ({
 	wikis,
-	pathToWikis,
-	mezaAuthType,
-	phpConfigPath,
+	systemMezaAuthType,
+	appMoreConfigPath,
 }: PlatformConfig): string => {
 	const redirects = doRedirects(wikis);
 
@@ -155,11 +103,16 @@ const doWikiSpecificSetup = ({
 
 		${redirects}
 
-		// get all directory names in /wikis, minus the first two: . and ..
-		$wikis = array_slice( scandir( "${pathToWikis}" ), 2 );
+		$mezaWikis = [
+			${wikis
+				.map(({ id, sitename, wikiMezaAuthType }) => {
+					const authType = wikiMezaAuthType ? `'${wikiMezaAuthType}'` : "false";
+					return `'${id}' => ['sitename' => '${sitename}', 'authtype' => ${authType}]`;
+				})
+				.join(",\n")}
+		];
 
-
-		if ( ! in_array( $wikiId, $wikis ) ) {
+		if ( ! isset( $mezaWikis[$wikiId] ) ) {
 
 			// handle invalid wiki
 			http_response_code(404);
@@ -167,18 +120,18 @@ const doWikiSpecificSetup = ({
 
 		}
 
-		// Set an all-wiki auth type, which individual wikis can override
-		$mezaAuthType = '${mezaAuthType}';
+		$wgSitename = $mezaWikis[$wikiId]['sitename'];
+		$mezaAuthType = $mezaWikis[$wikiId]['authtype'] ? $mezaWikis[$wikiId]['authtype'] : '${systemMezaAuthType}';
 
 		#
 		# PRE LOCAL SETTINGS
 		#
 		#    (1) Load all PHP files in preLocalSettings.d for all wikis
-		foreach ( glob("${phpConfigPath}/preLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/preLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}
 		#    (2) Load all PHP files in preLocalSettings.d for this wiki
-		foreach ( glob("${phpConfigPath}/wikis/$wikiId/preLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/wikis/$wikiId/preLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}`;
 };
@@ -272,7 +225,10 @@ const doDebug = ({ allowRequestDebug }: { allowRequestDebug: boolean }) => {
 		}`;
 };
 
-const doPathSetup = ({ wikiAppFqdn }: Pick<PlatformConfig, "wikiAppFqdn">) => {
+const doPathSetup = ({
+	wikiAppFqdn,
+	appUploadsDirectory,
+}: Pick<PlatformConfig, "wikiAppFqdn" | "appUploadsDirectory">) => {
 	// @todo: handle auth type from preLocalSettings.php
 	// @todo: handle debug from preLocalSettings_allWikis.php
 
@@ -301,7 +257,7 @@ const doPathSetup = ({ wikiAppFqdn }: Pick<PlatformConfig, "wikiAppFqdn">) => {
 		$wgUploadPath = "$wgScriptPath/img_auth.php";
 
 		// https://www.mediawiki.org/wiki/Manual:$wgUploadDirectory
-		$wgUploadDirectory = "{{ m_uploads_dir }}/$wikiId";
+		$wgUploadDirectory = "${appUploadsDirectory}/$wikiId";
 
 		// https://www.mediawiki.org/wiki/Manual:$wgLogo
 		$wgLogo = "/wikis/$wikiId/config/logo.png";
@@ -480,7 +436,7 @@ const doGeneralConfig = ({
 	memcachedServers,
 	thisServer,
 	wgSecretKey,
-	rootWgCacheDirectory,
+	appCacheDirectory,
 	wgAllowExternalImages,
 	wgAllowImageTag,
 	wgLocaltimezone,
@@ -490,11 +446,12 @@ const doGeneralConfig = ({
 	| "loadBalancers"
 	| "memcachedServers"
 	| "wgSecretKey"
-	| "rootWgCacheDirectory"
+	| "appCacheDirectory"
 	| "wgAllowExternalImages"
 	| "wgAllowImageTag"
 	| "wgLocaltimezone"
 >) => {
+	// FIXME if loadBalancers && loadBalancers.length, do proxy stuff, else don't do wgUseCdn, etc
 	return dedent`
 		/**
 		 *  6) GENERAL CONFIGURATION
@@ -503,9 +460,9 @@ const doGeneralConfig = ({
 		 *
 		 **/
 		// proxy setup
-		$wgUseSquid = true;
+		$wgUseCdn = true;
 		$wgUsePrivateIPs = true;
-		$wgSquidServersNoPurge = [
+		$wgCdnServersNoPurge = [
 		${loadBalancers
 			.map((server) => {
 				const s = serverOrLocalhost(server, thisServer);
@@ -561,11 +518,6 @@ const doGeneralConfig = ({
 		## this, if it's not already uncommented:
 		$wgHashedUploadDirectory = true;
 
-		## Set $wgCacheDirectory to a writable directory on the web server
-		## to make your wiki go slightly faster. The directory should not
-		## be publically accessible from the web.
-		#$wgCacheDirectory = "$IP/cache";
-
 		# Site language code, should be one of the list in ./languages/Names.php
 		$wgLanguageCode = "en";
 
@@ -605,7 +557,7 @@ const doGeneralConfig = ({
 		 *  - https://www.mediawiki.org/wiki/Manual:$wgCacheDirectory
 		 *  - https://www.mediawiki.org/wiki/Manual:$wgLocalisationCacheConf
 		 */
-		$wgCacheDirectory = "${rootWgCacheDirectory}/$wikiId";
+		$wgCacheDirectory = "${appCacheDirectory}/$wikiId";
 
 		// opens external links in new window
 		$wgExternalLinkTarget = '_blank';
@@ -683,9 +635,9 @@ const doGeneralConfig = ({
 };
 
 export const doPermissions = ({
-	mezaAuthType,
-}: Pick<PlatformConfig, "mezaAuthType">): string => {
-	if (mezaAuthType === "none") {
+	systemMezaAuthType,
+}: Pick<PlatformConfig, "systemMezaAuthType">): string => {
+	if (systemMezaAuthType === "none") {
 		return "";
 	}
 
@@ -701,7 +653,7 @@ export const doPermissions = ({
 		`;
 
 	let perms: string;
-	if (mezaAuthType === "anon-edit") {
+	if (systemMezaAuthType === "anon-edit") {
 		perms = `
 			// allow anonymous read
 			$wgGroupPermissions['*']['read'] = true;
@@ -710,7 +662,7 @@ export const doPermissions = ({
 			// allow anonymous write
 			$wgGroupPermissions['*']['edit'] = true;
 			$wgGroupPermissions['user']['edit'] = true;`;
-	} else if (mezaAuthType === "anon-read") {
+	} else if (systemMezaAuthType === "anon-read") {
 		perms = `
 			// allow anonymous read
 			$wgGroupPermissions['*']['read'] = true;
@@ -719,7 +671,7 @@ export const doPermissions = ({
 			// do not allow anonymous write (must be registered user)
 			$wgGroupPermissions['*']['edit'] = false;
 			$wgGroupPermissions['user']['edit'] = true;`;
-	} else if (mezaAuthType === "user-edit") {
+	} else if (systemMezaAuthType === "user-edit") {
 		perms = `
 			// no anonymous
 			$wgGroupPermissions['*']['read'] = false;
@@ -728,7 +680,7 @@ export const doPermissions = ({
 			// users read and write
 			$wgGroupPermissions['user']['read'] = true;
 			$wgGroupPermissions['user']['edit'] = true;`;
-	} else if (mezaAuthType === "user-read") {
+	} else if (systemMezaAuthType === "user-read") {
 		perms = `
 			// no anonymous
 			$wgGroupPermissions['*']['read'] = false;
@@ -768,12 +720,12 @@ export const doPermissions = ({
 };
 
 const doExtensionsSettings = ({
-	mediawikiPath,
+	appMediawikiPath,
 	thisServer,
 	elasticsearchServers,
 }: Pick<
 	PlatformConfig,
-	"mediawikiPath" | "thisServer" | "elasticsearchServers"
+	"appMediawikiPath" | "thisServer" | "elasticsearchServers"
 >) => {
 	return dedent`
 		/**
@@ -783,7 +735,7 @@ const doExtensionsSettings = ({
 		 *  below.
 		 */
 
-		require_once "${mediawikiPath}/extensions/ExtensionSettings.php";
+		require_once "${appMediawikiPath}/extensions/ExtensionSettings.php";
 
 
 		/**
@@ -806,8 +758,8 @@ const doExtensionsSettings = ({
 };
 
 const doLoadOverrides = ({
-	phpConfigPath,
-}: Pick<PlatformConfig, "phpConfigPath">) => {
+	appMoreConfigPath,
+}: Pick<PlatformConfig, "appMoreConfigPath">) => {
 	return dedent`
 		/**
 		 *  9) LOAD POST LOCAL SETTINGS
@@ -817,34 +769,16 @@ const doLoadOverrides = ({
 		 *
 		 **/
 		#    (1) Load all PHP files in postLocalSettings.d for all wikis
-		foreach ( glob("${phpConfigPath}/postLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/postLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}
 		#    (2) Load all PHP files in postLocalSettings.d for this wiki
-		foreach ( glob("${phpConfigPath}/wikis/$wikiId/postLocalSettings.d/*.php") as $filename) {
+		foreach ( glob("${appMoreConfigPath}/wikis/$wikiId/postLocalSettings.d/*.php") as $filename) {
 			require_once $filename;
 		}`;
 };
 
-const verifyAllUnique = (arr: string[]): undefined | AppError[] => {
-	const errors: AppError[] = [];
-
-	const alreadyFoundValue: Record<string, true> = {};
-	for (let i = 0; i < arr.length; i++) {
-		if (alreadyFoundValue[arr[i]]) {
-			errors.push({
-				errorType: "AppError",
-				msg: `Wiki ID or redirect "${arr[i]}" found more than once`,
-			});
-		} else {
-			alreadyFoundValue[arr[i]] = true;
-		}
-	}
-	if (errors.length) {
-		return errors;
-	}
-};
-
+// fixme duplicate?
 const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
 	const idsAndRedirects: string[] = [];
 
@@ -880,7 +814,7 @@ const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
 const doLocalSettings = (
 	config: PlatformConfig
 ): string | { errors: AppError[] } => {
-	const { allowRequestDebug, mezaAuthType, wikis } = config;
+	const { allowRequestDebug, systemMezaAuthType, wikis } = config;
 
 	const wikiErrors = validateWikis(wikis);
 	if (wikiErrors) {
@@ -895,7 +829,7 @@ const doLocalSettings = (
 		doEmail(config),
 		doDatabase(config),
 		doGeneralConfig(config),
-		doPermissions({ mezaAuthType }),
+		doPermissions({ systemMezaAuthType }),
 		doExtensionsSettings(config),
 		doLoadOverrides(config),
 	].join("\n\n\n");

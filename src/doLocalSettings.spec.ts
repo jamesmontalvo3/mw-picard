@@ -25,23 +25,25 @@ describe("doLocalSettings()", () => {
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
+						wikiMezaAuthType: "viewer-read",
 						redirectsFrom: ["oldwiki", "reallyoldwiki"],
 						isPrimaryWiki: true,
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "anon-read",
-				phpConfigPath: "/path/to/config",
+				systemMezaAuthType: "anon-read",
+				appMoreConfigPath: "/path/to/config",
 				allowRequestDebug: false,
 				wikiAppFqdn: "wiki.example.com",
 				enableEmail: true,
 				wgPasswordSender: "admin@example.com",
 				wgEmergencyContact: "admin@example.com",
 				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
+				appCacheDirectory: "/path/to/cache",
 				wgAllowExternalImages: true,
 				wgAllowImageTag: true,
 				wgLocaltimezone: "America/Chicago",
@@ -69,32 +71,35 @@ describe("doLocalSettings()", () => {
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
 						redirectsFrom: ["oldwiki", "reallyoldwiki"],
 						isPrimaryWiki: true,
 						dbName: "db_mywiki",
 					},
 					{
 						id: "mywiki2",
+						sitename: "My Wiki 2",
 						isPrimaryWiki: true,
 						dbName: "db_mywiki",
 					},
 					{
 						id: "oldwiki",
+						sitename: "Old Wiki",
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "anon-edit",
-				phpConfigPath: "/path/to/config",
+				systemMezaAuthType: "anon-edit",
+				appMoreConfigPath: "/path/to/config",
 				allowRequestDebug: false,
 				wikiAppFqdn: "wiki.example.com",
 				enableEmail: true,
 				wgPasswordSender: "admin@example.com",
 				wgEmergencyContact: "admin@example.com",
 				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
+				appCacheDirectory: "/path/to/cache",
 				wgAllowExternalImages: true,
 				wgAllowImageTag: true,
 				wgLocaltimezone: "America/Chicago",
@@ -133,22 +138,23 @@ describe("doLocalSettings()", () => {
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
 						redirectsFrom: ["oldwiki", "reallyoldwiki"],
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "user-edit",
-				phpConfigPath: "/path/to/config",
+				systemMezaAuthType: "user-edit",
+				appMoreConfigPath: "/path/to/config",
 				allowRequestDebug: false,
 				wikiAppFqdn: "wiki.example.com",
 				enableEmail: true,
 				wgPasswordSender: "admin@example.com",
 				wgEmergencyContact: "admin@example.com",
 				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
+				appCacheDirectory: "/path/to/cache",
 				wgAllowExternalImages: true,
 				wgAllowImageTag: true,
 				wgLocaltimezone: "America/Chicago",
@@ -189,21 +195,22 @@ describe("doLocalSettings()", () => {
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "user-read",
-				phpConfigPath: "/path/to/config",
+				systemMezaAuthType: "user-read",
+				appMoreConfigPath: "/path/to/config",
 				allowRequestDebug: true,
 				wikiAppFqdn: "localhost",
 				enableEmail: false,
 				wgPasswordSender: "admin@example.com",
 				wgEmergencyContact: "admin@example.com",
 				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
+				appCacheDirectory: "/path/to/cache",
 				wgAllowExternalImages: false,
 				wgAllowImageTag: false,
 				wgLocaltimezone: "America/Chicago",
@@ -222,7 +229,7 @@ describe("doLocalSettings()", () => {
 
 describe("doPermissions()", () => {
 	test("handle viewer-read permissions", async () => {
-		expect(doPermissions({ mezaAuthType: "viewer-read" })).toEqual(`/**
+		expect(doPermissions({ systemMezaAuthType: "viewer-read" })).toEqual(`/**
  *  7) PERMISSIONS
  *
  *
@@ -252,10 +259,10 @@ $wgGroupPermissions['Contributor']['edit'] = true;`);
 	});
 
 	test("handle 'none' permissions", async () => {
-		expect(doPermissions({ mezaAuthType: "none" })).toEqual("");
+		expect(doPermissions({ systemMezaAuthType: "none" })).toEqual("");
 	});
 	test("handle anon-edit permissions", async () => {
-		expect(doPermissions({ mezaAuthType: "anon-edit" })).toEqual(`/**
+		expect(doPermissions({ systemMezaAuthType: "anon-edit" })).toEqual(`/**
  *  7) PERMISSIONS
  *
  *

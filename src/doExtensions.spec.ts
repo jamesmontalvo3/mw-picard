@@ -1101,8 +1101,8 @@ describe("doComposerExtensions()", () => {
 
 		expect(
 			await doComposerExtensions({
-				mediawikiPath: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				appMediawikiPath: "/path/to/mediawiki",
+				controllerComposerCmd: "/path/to/composer",
 				extensions: [],
 			})
 		).toEqual(true);
@@ -1123,8 +1123,8 @@ describe("doComposerExtensions()", () => {
 
 		expect(
 			await doComposerExtensions({
-				mediawikiPath: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				appMediawikiPath: "/path/to/mediawiki",
+				controllerComposerCmd: "/path/to/composer",
 				extensions: [],
 			})
 		).toEqual(true);
@@ -1149,8 +1149,8 @@ describe("doComposerExtensions()", () => {
 		);
 
 		const result = await doComposerExtensions({
-			mediawikiPath: "/path/to/mediawiki",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mediawiki",
+			controllerComposerCmd: "/path/to/composer",
 			extensions: [],
 		});
 
@@ -1175,8 +1175,8 @@ describe("doComposerExtensions()", () => {
 		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
 
 		const result = await doComposerExtensions({
-			mediawikiPath: "/path/to/mediawiki",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mediawiki",
+			controllerComposerCmd: "/path/to/composer",
 			extensions: [],
 		});
 
@@ -1208,8 +1208,8 @@ describe("doComposerExtensions()", () => {
 
 		expect(
 			await doComposerExtensions({
-				mediawikiPath: "/path/to/mediawiki",
-				composerCmd: "/path/to/composer",
+				appMediawikiPath: "/path/to/mediawiki",
+				controllerComposerCmd: "/path/to/composer",
 				extensions: [
 					{
 						name: "someext",
@@ -1337,8 +1337,8 @@ describe("doExtensions()", () => {
 
 	test("handle empty config and no prior install", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [],
 			priorInstallation: false,
 		});
@@ -1348,8 +1348,8 @@ describe("doExtensions()", () => {
 
 	test("handle empty config and empty prior install", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [],
 			priorInstallation: [],
 		});
@@ -1359,8 +1359,8 @@ describe("doExtensions()", () => {
 
 	test("write first real config and inform to run update.php", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "MyExt",
@@ -1397,8 +1397,8 @@ describe("doExtensions()", () => {
 
 	test("overwrite config and inform to run update.php", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "MyExt",
@@ -1459,8 +1459,8 @@ describe("doExtensions()", () => {
 
 	test("overwrite config and inform to run update.php for added wiki when extension requires it", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "MyExt",
@@ -1518,8 +1518,8 @@ describe("doExtensions()", () => {
 
 	test("overwrite config and merge requirements for which wikis to run update.php", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "MyExt",
@@ -1588,8 +1588,8 @@ describe("doExtensions()", () => {
 
 	test("overwrite config and run update.php on all wikis", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "ComposerExt",
@@ -1621,8 +1621,8 @@ describe("doExtensions()", () => {
 
 	test("handle skins", async () => {
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "SomeSkin",
@@ -1668,8 +1668,8 @@ describe("doExtensions() errors", () => {
 		const consoleErrorSpy = makeConsoleErrorSpy();
 
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "MyExt",
@@ -1702,8 +1702,8 @@ describe("doExtensions() errors", () => {
 		jest.spyOn(fs.promises, "writeFile").mockImplementation(mockWriteFile);
 
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "MyExt",
@@ -1736,8 +1736,8 @@ describe("doExtensions() errors", () => {
 		jest.spyOn(asyncExecModule, "asyncExec").mockImplementation(asyncExecMock);
 
 		const result = await doExtensions({
-			mediawikiPath: "/path/to/mw",
-			composerCmd: "/path/to/composer",
+			appMediawikiPath: "/path/to/mw",
+			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [
 				{
 					name: "MyExt",
