@@ -1,17 +1,33 @@
-import { couldBe, verifyAllUnique } from "./util";
+import { promises as fsp } from "fs";
+import path from "path";
+import { couldBe, pathResolve, verifyAllUnique } from "./util";
+
+const errorIfInvalid = (
+	isValid: boolean,
+	property: string,
+	type: string
+): void => {
+	if (!isValid) {
+		console.error(`Expected ${property} to be ${type}`);
+	}
+};
 
 const hasStringProp = <K extends string>(
 	obj: Record<string, unknown>,
 	property: K
 ): obj is { [property in K]: string } => {
-	return property in obj && typeof obj[property] === "string";
+	const valid = property in obj && typeof obj[property] === "string";
+	errorIfInvalid(valid, property, "string");
+	return valid;
 };
 
 const hasBooleanProp = <K extends string>(
 	obj: Record<string, unknown>,
 	property: K
 ): obj is { [property in K]: boolean } => {
-	return property in obj && typeof obj[property] === "boolean";
+	const valid = property in obj && typeof obj[property] === "boolean";
+	errorIfInvalid(valid, property, "boolean");
+	return valid;
 };
 
 const hasBooleanOrUndefinedProp = <K extends string>(
@@ -21,7 +37,9 @@ const hasBooleanOrUndefinedProp = <K extends string>(
 	if (!(property in obj)) {
 		return true;
 	}
-	return typeof obj[property] === "boolean";
+	const valid = typeof obj[property] === "boolean";
+	errorIfInvalid(valid, property, "boolean or undefined");
+	return valid;
 };
 
 const isArrayOfStrings = (value: unknown): value is string[] => {
@@ -37,14 +55,18 @@ const hasArrayOfStringsOrUndefinedProp = <K extends string>(
 	if (!(property in obj)) {
 		return true;
 	}
-	return isArrayOfStrings(obj[property]);
+	const valid = isArrayOfStrings(obj[property]);
+	errorIfInvalid(valid, property, "array of strings or undefined");
+	return valid;
 };
 
 const hasArrayOfStringsProp = <K extends string>(
 	obj: Record<string, unknown>,
 	property: K
 ): obj is { [property in K]: string[] } => {
-	return property in obj && isArrayOfStrings(obj[property]);
+	const valid = property in obj && isArrayOfStrings(obj[property]);
+	errorIfInvalid(valid, property, "array of strings");
+	return valid;
 };
 
 const isMezaAuthType = (value: unknown): value is MezaAuthType => {
@@ -66,7 +88,9 @@ const hasMezaAuthTypeProp = <K extends string>(
 	obj: Record<string, unknown>,
 	property: K
 ): obj is { [property in K]: MezaAuthType } => {
-	return isMezaAuthType(obj[property]);
+	const valid = isMezaAuthType(obj[property]);
+	errorIfInvalid(valid, property, "a meza auth type");
+	return valid;
 };
 
 const hasMezaAuthTypeOrUndefinedProp = <K extends string>(
@@ -76,7 +100,9 @@ const hasMezaAuthTypeOrUndefinedProp = <K extends string>(
 	if (!(property in obj)) {
 		return true;
 	}
-	return isMezaAuthType(obj[property]);
+	const valid = isMezaAuthType(obj[property]);
+	errorIfInvalid(valid, property, "a meza auth type or undefined");
+	return valid;
 };
 
 const validateWikiConfig = (value: unknown): WikiConfig | false => {
@@ -84,39 +110,14 @@ const validateWikiConfig = (value: unknown): WikiConfig | false => {
 		return false;
 	}
 
-	if (!hasStringProp(value, "id")) {
-		console.error("Wiki Config 'id' field must be a string");
-		return false;
-	}
-
-	if (!hasStringProp(value, "dbName")) {
-		console.error("Wiki Config 'dbName' field must be a string");
-		return false;
-	}
-
-	if (!hasStringProp(value, "sitename")) {
-		console.error("Wiki Config 'sitename' field must be a string");
-		return false;
-	}
-
-	if (!hasBooleanOrUndefinedProp(value, "isPrimaryWiki")) {
-		console.error(
-			"Wiki Config 'isPrimaryWiki' field must be a boolean or undefined"
-		);
-		return false;
-	}
-
-	if (!hasArrayOfStringsOrUndefinedProp(value, "redirectsFrom")) {
-		console.error(
-			"Wiki Config 'redirectsFrom' field must be an array of strings or undefined"
-		);
-		return false;
-	}
-
-	if (!hasMezaAuthTypeOrUndefinedProp(value, "wikiMezaAuthType")) {
-		console.error(
-			"Wiki Config 'id' field must be a Meza Auth Type or undefined"
-		);
+	if (
+		!hasStringProp(value, "id") ||
+		!hasStringProp(value, "dbName") ||
+		!hasStringProp(value, "sitename") ||
+		!hasBooleanOrUndefinedProp(value, "isPrimaryWiki") ||
+		!hasArrayOfStringsOrUndefinedProp(value, "redirectsFrom") ||
+		!hasMezaAuthTypeOrUndefinedProp(value, "wikiMezaAuthType")
+	) {
 		return false;
 	}
 
@@ -136,17 +137,22 @@ const hasWikiConfigArrayProp = <K extends string>(
 	return isArrayOfWikiConfig(obj[property]);
 };
 
-const validateWikis = (wikis: unknown): WikiConfig[] | AppError[] => {
+const validateWikis = (
+	wikis: unknown
+): WikiConfig[] | { errors: AppError[] } => {
+	const errObj: { errors: AppError[] } = { errors: [] };
+
 	if (!isArrayOfWikiConfig(wikis)) {
-		return [
-			{ errorType: "AppError", msg: "'wikis' is not an array of WikiConfig" },
-		];
+		errObj.errors.push({
+			errorType: "AppError",
+			msg: "'wikis' is not an array of WikiConfig",
+		});
+		return errObj;
 	}
 
 	const idsAndRedirects: string[] = [];
 
 	let primaryWiki: string | undefined;
-	const errors: AppError[] = [];
 
 	for (const wiki of wikis) {
 		idsAndRedirects.push(wiki.id);
@@ -155,7 +161,7 @@ const validateWikis = (wikis: unknown): WikiConfig[] | AppError[] => {
 		}
 
 		if (wiki.isPrimaryWiki && primaryWiki) {
-			errors.push({
+			errObj.errors.push({
 				errorType: "AppError",
 				msg: `Tried to set ${wiki.id} as primary wiki when already set to ${primaryWiki}`,
 			});
@@ -166,11 +172,11 @@ const validateWikis = (wikis: unknown): WikiConfig[] | AppError[] => {
 
 	const uniqueErrors = verifyAllUnique(idsAndRedirects);
 	if (uniqueErrors) {
-		errors.push(...uniqueErrors);
+		errObj.errors.push(...uniqueErrors);
 	}
 
-	if (errors.length) {
-		return errors;
+	if (errObj.errors.length) {
+		return errObj;
 	}
 
 	return wikis;
@@ -198,9 +204,23 @@ const hasExtensionFilesProp = <K extends string>(
 	}
 };
 
-export const validatePlatformConfig = (
-	config: unknown
-): PlatformConfig | string => {
+export const loadPlatformConfig = async (
+	absOrRelConfigPath: string
+): Promise<PlatformConfig | string> => {
+	const configPath = pathResolve(absOrRelConfigPath, false);
+	if (!configPath) {
+		return `Invalid platform config path: ${absOrRelConfigPath}`;
+	}
+	const dir = path.dirname(configPath);
+
+	let config: unknown;
+	try {
+		const fileContents = await fsp.readFile(configPath, "utf-8");
+		config = JSON.parse(fileContents);
+	} catch (err) {
+		return "Unable to load platform config from " + configPath;
+	}
+
 	if (!couldBe<PlatformConfig>(config)) {
 		return "config is not an object and thus is missing all required properties";
 	}
@@ -233,8 +253,30 @@ export const validatePlatformConfig = (
 		!hasWikiConfigArrayProp(config, "wikis") ||
 		!hasExtensionFilesProp(config, "extensionsFiles") // fixme extensionsFiles versus extensionFiles
 	) {
-		return "Missing stuff"; // fixme
+		return "Properties missing or incorrect types";
 	}
+
+	const wikisValid = validateWikis(config.wikis);
+	if ("errors" in wikisValid) {
+		return (
+			"Validating individual wiki config failed with the following errors:\n  " +
+			wikisValid.errors.join("\n  ")
+		);
+	}
+
+	const resolvedBaseline = pathResolve(config.extensionsFiles.baseline, dir);
+	const resolvedSpecifier = pathResolve(config.extensionsFiles.specifier, dir);
+
+	if (!resolvedBaseline) {
+		return "Invalid baseline extension config";
+	}
+
+	if (!resolvedSpecifier) {
+		return "Invalid specifier extension config";
+	}
+
+	config.extensionsFiles.baseline = resolvedBaseline;
+	config.extensionsFiles.specifier = resolvedSpecifier;
 
 	return config;
 };

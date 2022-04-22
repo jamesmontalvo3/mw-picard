@@ -22,6 +22,12 @@ describe("doLocalSettings()", () => {
 		const expected = await loadLocalSettingsExpectedVals(1);
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",
@@ -68,6 +74,12 @@ describe("doLocalSettings()", () => {
 	test("case 2: handle two primary wikis and overlapping redirects", async () => {
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",
@@ -135,6 +147,12 @@ describe("doLocalSettings()", () => {
 		const expected = await loadLocalSettingsExpectedVals(3);
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",
@@ -192,6 +210,12 @@ describe("doLocalSettings()", () => {
 		const expected = await loadLocalSettingsExpectedVals(4);
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",

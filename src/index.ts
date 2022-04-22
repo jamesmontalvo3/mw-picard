@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import doLocalSettings from "./doLocalSettings";
 import processExtensions from "./processExtensions";
-import { validatePlatformConfig } from "./validatePlatformConfig";
+import { loadPlatformConfig } from "./validatePlatformConfig";
 
 const run = async (platformYamlPath: string | undefined): Promise<void> => {
 	if (!platformYamlPath) {
@@ -10,26 +10,9 @@ const run = async (platformYamlPath: string | undefined): Promise<void> => {
 		process.exit(1);
 	}
 
-	let platformConfig: PlatformConfig | string;
+	const platformConfig = await loadPlatformConfig(platformYamlPath);
 
-	try {
-		const fileContents = await fs.promises.readFile(platformYamlPath, "utf-8");
-
-		// FIXME
-		// FIXME
-		// FIXME - validate platformConfig and give excellent error messages
-		// FIXME
-		// FIXME
-		platformConfig = validatePlatformConfig(JSON.parse(fileContents));
-	} catch (err) {
-		console.error(
-			"Unable to load platform config from " + platformYamlPath,
-			err
-		);
-		process.exit(1);
-	}
-
-	if (platformConfig === false) {
+	if (typeof platformConfig === "string") {
 		console.error(platformConfig);
 		process.exit(1);
 	}

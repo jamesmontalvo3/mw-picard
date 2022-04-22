@@ -779,11 +779,13 @@ const doLoadOverrides = ({
 };
 
 // fixme duplicate?
-const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
+const validateWikis = (
+	wikis: WikiConfig[]
+): undefined | { errors: AppError[] } => {
 	const idsAndRedirects: string[] = [];
 
 	let primaryWiki: string | undefined;
-	const errors: AppError[] = [];
+	const errObject: { errors: AppError[] } = { errors: [] };
 
 	for (const wiki of wikis) {
 		idsAndRedirects.push(wiki.id);
@@ -792,7 +794,7 @@ const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
 		}
 
 		if (wiki.isPrimaryWiki && primaryWiki) {
-			errors.push({
+			errObject.errors.push({
 				errorType: "AppError",
 				msg: `Tried to set ${wiki.id} as primary wiki when already set to ${primaryWiki}`,
 			});
@@ -803,11 +805,11 @@ const validateWikis = (wikis: WikiConfig[]): undefined | AppError[] => {
 
 	const uniqueErrors = verifyAllUnique(idsAndRedirects);
 	if (uniqueErrors) {
-		errors.push(...uniqueErrors);
+		errObject.errors.push(...uniqueErrors);
 	}
 
-	if (errors.length) {
-		return errors;
+	if (errObject.errors.length) {
+		return errObject;
 	}
 };
 
@@ -816,9 +818,9 @@ const doLocalSettings = (
 ): string | { errors: AppError[] } => {
 	const { allowRequestDebug, systemMezaAuthType, wikis } = config;
 
-	const wikiErrors = validateWikis(wikis);
-	if (wikiErrors) {
-		return { errors: wikiErrors };
+	const err = validateWikis(wikis);
+	if (err && err.errors.length) {
+		return { errors: err.errors };
 	}
 
 	return [
