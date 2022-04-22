@@ -1,5 +1,5 @@
 import fs from "fs";
-import path from "path";
+import path from "upath";
 import doLocalSettings from "./doLocalSettings";
 import processExtensions from "./processExtensions";
 import { loadPlatformConfig } from "./validatePlatformConfig";

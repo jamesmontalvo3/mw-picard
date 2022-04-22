@@ -1,4 +1,4 @@
-import path from "path";
+import path from "upath";
 import {
 	couldBe,
 	errorIfInvalid,
@@ -252,8 +252,13 @@ export const loadPlatformConfig = async (
 		);
 	}
 
+	const resolvedMediawiki = pathResolve(config.controllerMediawikiPath, dir);
 	const resolvedBaseline = pathResolve(config.extensionsFiles.baseline, dir);
 	const resolvedSpecifier = pathResolve(config.extensionsFiles.specifier, dir);
+
+	if (!resolvedMediawiki) {
+		return "Invalid mediawiki install location (controller)";
+	}
 
 	if (!resolvedBaseline) {
 		return "Invalid baseline extension config";
@@ -263,6 +268,7 @@ export const loadPlatformConfig = async (
 		return "Invalid specifier extension config";
 	}
 
+	config.controllerMediawikiPath = resolvedMediawiki;
 	config.extensionsFiles.baseline = resolvedBaseline;
 	config.extensionsFiles.specifier = resolvedSpecifier;
 

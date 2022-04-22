@@ -1,4 +1,4 @@
-import path from "path";
+import path from "upath";
 import { promises as fsp } from "fs";
 import YAML from "js-yaml";
 import getExtensionConfig, {
@@ -81,6 +81,7 @@ const processExtensions = async (
 		return result;
 	}
 
+	// FIXME need to make sure this doesn't get written if there were errors anywhere...
 	// Generate specifier `.installed.yml`
 	await fsp.writeFile(priorInstallationFilePath, YAML.dump(extensionsConfig));
 

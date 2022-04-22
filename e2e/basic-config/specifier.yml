@@ -3,5 +3,10 @@
   config: // Override/remove default config
 - name: SyntaxHighlight_GeSHi
 - name: CodeEditor
+  wikis: ["iss"]
+  # version: "master"
 - name: ReplaceText
   wikis: ["iss", "general"]
+- name: TemplateData
+- name: Thanks
+- name: SemanticMediaWiki

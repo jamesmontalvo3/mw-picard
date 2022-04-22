@@ -61,7 +61,8 @@ appMoreConfigPath: /mw-config
 # (the server running PHP and serving pages) from the "controller" (the machine that
 # generates config files and makes changes to the system).
 appMediawikiPath: /mediawiki
-controllerMediawikiPath: C:/Users/ejmontal/docs/wiki/mediawiki #../basic-output
+# controllerMediawikiPath: C:/Users/ejmontal/docs/wiki/mediawiki #../basic-output
+controllerMediawikiPath: ../basic-output
 
 # Location of cache on app server
 appCacheDirectory: /cache

@@ -15,8 +15,8 @@
 		"resolveJsonModule": true,
 		"forceConsistentCasingInFileNames": true,
 
-		// "rootDir": "./src",
+		"rootDir": "./src",
 		"outDir": "./dist"
 	},
-	"include": ["src", "jest.config.ts"]
+	"include": ["src"]
 }

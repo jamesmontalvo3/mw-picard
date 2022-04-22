@@ -466,6 +466,28 @@
   version: tags/0.7.0
   legacy_load: true
 
+- name: SemanticMediaWiki
+  update_php_on_change: "code-changes"
+  composer: "mediawiki/semantic-media-wiki"
+  version: "3.2.2"
+  config: |
+    // Enable Semantic MediaWiki semantics
+    enableSemantics( $wikiId );
+    // Semantic MediaWiki Settings
+    $smwgQMaxSize = 5000;
+    // allows adding semantic properties to Templates themselves
+    // (not just on pages via templates).
+    $smwgNamespacesWithSemanticLinks[NS_TALK] = true;
+    $smwgNamespacesWithSemanticLinks[NS_TEMPLATE] = true;
+    // Always use DB_REPLICA for temporary table actions. Need to pick either
+    // DB_REPLICA or DB_MASTER for this, since temporary tables will either not
+    // replicate at all or won't replicate fast enough (or, even if they do
+    // technically replicate, they are only available to the session that
+    // created them, and thus they effectively don't replicate). Picking
+    // DB_REPLICA since temporary tables are effectively a read-action since
+    // they are used only for making more efficient queries.
+    $smwgLocalConnectionConf['mw.db.queryengine'] = [ 'read' => DB_REPLICA, 'write' => DB_REPLICA ];
+
 #
 # Skins
 #

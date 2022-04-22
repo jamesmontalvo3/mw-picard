@@ -1,5 +1,5 @@
 import { promises as fsp } from "fs";
-import path from "path";
+import path from "upath";
 import YAML from "js-yaml";
 
 export const couldBe = <T>(

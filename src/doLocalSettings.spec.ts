@@ -1,6 +1,6 @@
 import doLocalSettings, { doPermissions } from "./doLocalSettings";
 import fs from "fs";
-import path from "path";
+import path from "upath";
 
 describe("doLocalSettings()", () => {
 	const loadLocalSettingsExpectedVals = async (
