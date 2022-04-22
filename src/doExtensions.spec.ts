@@ -1129,7 +1129,8 @@ describe("doComposerExtensions()", () => {
 			composerLocalJsonify(baselineComposerLocalJson)
 		);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"cd /path/to/mediawiki && /path/to/composer install && /path/to/composer update"
+			"/path/to/composer install && /path/to/composer update",
+			"/path/to/mediawiki"
 		);
 	});
 
@@ -1156,7 +1157,8 @@ describe("doComposerExtensions()", () => {
 			composerLocalJsonify(baselineComposerLocalJson)
 		);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"cd /path/to/mediawiki && /path/to/composer install && /path/to/composer update"
+			"/path/to/composer install && /path/to/composer update",
+			"/path/to/mediawiki"
 		);
 	});
 
@@ -1233,7 +1235,8 @@ describe("doComposerExtensions()", () => {
 			composerLocalJsonify(composerLocalJson)
 		);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"cd /path/to/mediawiki && /path/to/composer install && /path/to/composer update"
+			"/path/to/composer install && /path/to/composer update",
+			"/path/to/mediawiki"
 		);
 	});
 });
