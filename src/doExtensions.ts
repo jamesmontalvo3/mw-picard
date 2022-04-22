@@ -305,7 +305,7 @@ export const doExtensionSettings = async ({
 };
 
 export type DoExtensionsResult =
-	| { status: "ERROR" }
+	| { status: "ERROR"; msg?: string }
 	| { status: "NOCHANGE" }
 	| {
 			status: "CHANGED";

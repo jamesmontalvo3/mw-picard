@@ -1,16 +1,11 @@
-import { promises as fsp } from "fs";
 import path from "path";
-import { couldBe, pathResolve, verifyAllUnique } from "./util";
-
-const errorIfInvalid = (
-	isValid: boolean,
-	property: string,
-	type: string
-): void => {
-	if (!isValid) {
-		console.error(`Expected ${property} to be ${type}`);
-	}
-};
+import {
+	couldBe,
+	errorIfInvalid,
+	loadYamlFile,
+	pathResolve,
+	verifyAllUnique,
+} from "./util";
 
 const hasStringProp = <K extends string>(
 	obj: Record<string, unknown>,
@@ -212,14 +207,7 @@ export const loadPlatformConfig = async (
 		return `Invalid platform config path: ${absOrRelConfigPath}`;
 	}
 	const dir = path.dirname(configPath);
-
-	let config: unknown;
-	try {
-		const fileContents = await fsp.readFile(configPath, "utf-8");
-		config = JSON.parse(fileContents);
-	} catch (err) {
-		return "Unable to load platform config from " + configPath;
-	}
+	const config = await loadYamlFile(configPath, false);
 
 	if (!couldBe<PlatformConfig>(config)) {
 		return "config is not an object and thus is missing all required properties";

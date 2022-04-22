@@ -1,0 +1,24 @@
+- name: ParserFunctions
+  repo: https://github.com/wikimedia/mediawiki-extensions-ParserFunctions.git
+  version: REL1_35
+  config: |
+    // Also enable StringFunctions, like len, pos, sub, replace, explode
+    // https://www.mediawiki.org/wiki/Extension:StringFunctions
+    $wgPFEnableStringFunctions = true;
+- name: WikiEditor
+  repo: https://github.com/wikimedia/mediawiki-extensions-WikiEditor.git
+  version: REL1_35
+  config: // Override/remove default config
+- name: SyntaxHighlight_GeSHi
+  repo: https://github.com/wikimedia/mediawiki-extensions-SyntaxHighlight_GeSHi.git
+  version: REL1_35
+  composer_merge: true
+- name: CodeEditor
+  repo: https://github.com/wikimedia/mediawiki-extensions-CodeEditor.git
+  version: REL1_35
+- name: ReplaceText
+  repo: https://github.com/wikimedia/mediawiki-extensions-ReplaceText.git
+  version: tags/1.4.1
+  wikis:
+    - iss
+    - general

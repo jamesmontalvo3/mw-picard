@@ -1,4 +1,6 @@
+import { promises as fsp } from "fs";
 import path from "path";
+import YAML from "js-yaml";
 
 export const couldBe = <T>(
 	maybe: unknown
@@ -25,6 +27,24 @@ export const verifyAllUnique = (arr: string[]): undefined | AppError[] => {
 	}
 };
 
+export const loadYamlFile = async (
+	filepath: string,
+	allowMissing?: boolean
+): Promise<unknown> => {
+	let content: Buffer;
+
+	try {
+		content = await fsp.readFile(filepath);
+	} catch (err) {
+		if (allowMissing) {
+			return false;
+		}
+		throw err;
+	}
+
+	return YAML.load(content.toString());
+};
+
 /**
  *
  * @param absOrRelPath an absolute (/opt/mystuff/file.conf) or relative (../file.conf) file path
@@ -49,4 +69,15 @@ export const pathResolve = (
 		return path.resolve(base, absOrRelPath);
 	}
 	return path.resolve(absOrRelPath); // still resolve to simplify
+};
+
+export const errorIfInvalid = (
+	isValid: boolean,
+	property: string,
+	type: string
+): boolean => {
+	if (!isValid) {
+		console.error(`Expected ${property} to be ${type}`);
+	}
+	return isValid;
 };

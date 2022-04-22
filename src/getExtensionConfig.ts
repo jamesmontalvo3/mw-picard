@@ -1,12 +1,27 @@
-import { couldBe } from "./util";
+import { couldBe, errorIfInvalid } from "./util";
 
 export const isExtensionConfig = (maybe: unknown): maybe is ExtensionConfig => {
-	return (
-		couldBe<ExtensionConfig>(maybe) &&
-		typeof maybe.name === "string" &&
-		typeof maybe.version === "string" &&
-		("repo" in maybe || "composer" in maybe)
+	if (!couldBe<ExtensionConfig>(maybe)) {
+		console.error("Value is not an object, should be WikiConfig");
+		return false;
+	}
+
+	let isValid = errorIfInvalid(
+		typeof maybe.name === "string",
+		"name",
+		"string"
 	);
+
+	isValid =
+		errorIfInvalid(typeof maybe.version === "string", "name", "string") &&
+		isValid;
+
+	const hasSource = "repo" in maybe || "composer" in maybe;
+	if (!hasSource) {
+		console.error(`WikiConfig needs either .repo or .composer value as string`);
+	}
+
+	return isValid && hasSource;
 };
 
 export const isPartialExtensionConfig = (
@@ -19,10 +34,12 @@ export const isExtensionConfigArray = (
 	maybe: unknown
 ): maybe is ExtensionConfig[] => {
 	if (!Array.isArray(maybe)) {
+		console.error("Extension config array must be array");
 		return false;
 	}
 	for (const elem of maybe) {
 		if (!isExtensionConfig(elem)) {
+			console.error("Not a valid WikiConfig: " + JSON.stringify(elem));
 			return false;
 		}
 	}

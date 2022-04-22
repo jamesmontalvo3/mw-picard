@@ -12,27 +12,32 @@ wgAllowExternalImages: false
 wgAllowImageTag: false
 wgLocaltimezone: America/Chicago
 
-
 wikis:
   - id: general
-	  redirectsFrom:
+    sitename: General Wiki
+    redirectsFrom:
       - fod
-	  isPrimaryWiki: true
-	  dbName: wiki_fod
+    isPrimaryWiki: true
+    dbName: wiki_fod
     # imagesDir: fod <-- add this
   - id: iss
-	  redirectsFrom:
+    sitename: ISS Wiki
+    redirectsFrom:
       - eva
       - oso
       - robo
-	  dbName: wiki_iss
+    dbName: wiki_iss
   - id: exploration
-	  dbName: wiki_exploration
+    sitename: Exploration Wiki
+    dbName: wiki_exploration
   - id: sandbox
-	  dbName: wiki_sandbox
+    sitename: Sandbox Wiki
+    dbName: wiki_sandbox
 
-wikiAppDbPassword: 1234
+wikiAppDbPassword: "1234"
 wikiAppDbUser: root
+
+systemMezaAuthType: "none"
 
 #
 # DO NOT CHANGE SETTINGS BELOW
@@ -56,7 +61,7 @@ appMoreConfigPath: /mw-config
 # (the server running PHP and serving pages) from the "controller" (the machine that
 # generates config files and makes changes to the system).
 appMediawikiPath: /mediawiki
-controllerMediawikiPath: ../basic-output
+controllerMediawikiPath: C:/Users/ejmontal/docs/wiki/mediawiki #../basic-output
 
 # Location of cache on app server
 appCacheDirectory: /cache

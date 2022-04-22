@@ -6,30 +6,13 @@ import getExtensionConfig, {
 	isPartialExtensionConfigArray,
 } from "./getExtensionConfig";
 import doExtensions, { DoExtensionsResult } from "./doExtensions";
+import { loadYamlFile } from "./util";
 
 type ProcessExtensionsProps = {
 	baseline: string;
 	specifier: string;
 	mediawiki: string;
 	controllerComposerCmd: string;
-};
-
-const loadYamlFile = async (
-	filepath: string,
-	allowMissing?: boolean
-): Promise<unknown> => {
-	let content: Buffer;
-
-	try {
-		content = await fsp.readFile(filepath);
-	} catch (err) {
-		if (allowMissing) {
-			return false;
-		}
-		throw err;
-	}
-
-	return YAML.load(content.toString());
 };
 
 const processExtensions = async (
@@ -61,11 +44,22 @@ const processExtensions = async (
 				? false
 				: installedMaybe;
 	} catch (err) {
-		return { status: "ERROR" };
+		console.error(err);
+		return {
+			status: "ERROR",
+			msg: "Error loading extension config. Error was: " + JSON.stringify(err),
+		};
 	}
 
 	if (!baseline || !specifier) {
-		return { status: "ERROR" };
+		const which = [];
+		if (!baseline) {
+			which.push("baseline");
+		}
+		if (!specifier) {
+			which.push("specifier");
+		}
+		return { status: "ERROR", msg: which.join(" and ") + " invalid" };
 	}
 
 	const extensionsConfig = getExtensionConfig(baseline, specifier);
