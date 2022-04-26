@@ -909,7 +909,7 @@ describe("gitCheckoutCommand()", () => {
 				eraseChanges: true,
 			})
 		).toEqual(
-			"cd /path/to/ext && git fetch && git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
+			"git fetch && git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
 		);
 	});
 	test("create command that fetch", () => {
@@ -919,7 +919,7 @@ describe("gitCheckoutCommand()", () => {
 				fetch: true,
 				eraseChanges: false,
 			})
-		).toEqual("cd /path/to/ext && git fetch && git checkout tags/1.2.3");
+		).toEqual("git fetch && git checkout tags/1.2.3");
 	});
 	test("create command that just cleans up repo", () => {
 		expect(
@@ -929,7 +929,7 @@ describe("gitCheckoutCommand()", () => {
 				eraseChanges: true,
 			})
 		).toEqual(
-			"cd /path/to/ext && git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
+			"git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
 		);
 	});
 	test("just checks out the correct version", () => {
@@ -939,13 +939,14 @@ describe("gitCheckoutCommand()", () => {
 				fetch: false,
 				eraseChanges: false,
 			})
-		).toEqual("cd /path/to/ext && git checkout tags/1.2.3");
+		).toEqual("git checkout tags/1.2.3");
 	});
 });
 
 describe("makeGitRight()", () => {
 	let consoleErrorSpy: jest.SpyInstance;
 	let asyncRimrafSpy: jest.SpyInstance;
+	let asyncExecSpy: jest.SpyInstance;
 
 	beforeAll(() => {
 		jest
@@ -973,12 +974,18 @@ describe("makeGitRight()", () => {
 	});
 
 	afterEach(() => {
+		asyncExecSpy.mockRestore();
 		consoleErrorSpy.mockRestore();
 		asyncRimrafSpy.mockRestore();
 	});
 
+	afterAll(() => {
+		jest.restoreAllMocks();
+		jest.clearAllMocks();
+	});
+
 	test("handle existing repo-directory with valid commands", async () => {
-		const asyncExecSpy = makeAsyncExecSpy({ throws: false });
+		asyncExecSpy = makeAsyncExecSpy({ throws: false });
 
 		expect(
 			await makeGitRight({
@@ -988,7 +995,8 @@ describe("makeGitRight()", () => {
 			})
 		).toEqual(true);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"cd /is/git/repo && git fetch && git reset --hard HEAD && git clean -f && git checkout 1.2.3"
+			"git fetch && git reset --hard HEAD && git clean -f && git checkout 1.2.3",
+			"/is/git/repo"
 		);
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(0);
 	});
@@ -1004,7 +1012,8 @@ describe("makeGitRight()", () => {
 			})
 		).toEqual(false);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"cd /is/git/repo && git fetch && git reset --hard HEAD && git clean -f && git checkout 2.2.3"
+			"git fetch && git reset --hard HEAD && git clean -f && git checkout 2.2.3",
+			"/is/git/repo"
 		);
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
@@ -1019,8 +1028,15 @@ describe("makeGitRight()", () => {
 				version: "3.2.3",
 			})
 		).toEqual(true);
-		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"git clone https://git.example.com/MyExt /not/git/repo && cd /not/git/repo && git checkout 3.2.3"
+		expect(asyncExecSpy).toHaveBeenNthCalledWith(
+			1,
+			"git clone https://git.example.com/MyExt /not/git/repo",
+			undefined
+		);
+		expect(asyncExecSpy).toHaveBeenNthCalledWith(
+			2,
+			"git checkout 3.2.3",
+			"/not/git/repo"
 		);
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(0);
 	});
@@ -1036,7 +1052,8 @@ describe("makeGitRight()", () => {
 			})
 		).toEqual(false);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"git clone https://git.example.com/MyExt /not/git/repo && cd /not/git/repo && git checkout 4.2.3"
+			"git clone https://git.example.com/MyExt /not/git/repo",
+			undefined
 		);
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
@@ -1055,15 +1072,12 @@ describe("makeGitRight()", () => {
 				version: "4.2.3",
 			})
 		).toEqual(false);
-		expect(asyncExecSpy).toHaveBeenCalledWith(
-			"git clone https://git.example.com/MyExt /not/git/repo && cd /not/git/repo && git checkout 4.2.3"
-		);
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
-	});
-
-	afterAll(() => {
-		jest.restoreAllMocks();
-		jest.clearAllMocks();
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
+			"Unable to remove bad repo: ",
+			"Error: Unable to delete existing directory /not/git/repo"
+		);
+		expect(asyncExecSpy).toHaveBeenCalledTimes(0);
 	});
 });
 
@@ -1331,6 +1345,12 @@ describe("doExtensions()", () => {
 		makeReadFileSpy("{}");
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: false });
+	});
+
+	// FIXME after each instead?
+	afterAll(() => {
+		jest.clearAllMocks();
+		jest.restoreAllMocks();
 	});
 
 	test("handle empty config and no prior install", async () => {

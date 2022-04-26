@@ -193,7 +193,7 @@ export const makeGitRight = async ({
 	try {
 		repoExists = await isGitRepo(cloneDirectory);
 	} catch (err) {
-		console.error("Unable to remove bad repo: ", err);
+		console.error("Unable to remove bad repo: ", String(err));
 		return false;
 	}
 

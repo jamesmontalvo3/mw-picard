@@ -10,7 +10,15 @@ import {
 } from "./test-utils";
 
 describe("processExtensions()", () => {
+	// FIXME cleanup mocks after each?
+
+	afterEach(() => {
+		jest.clearAllMocks();
+		jest.restoreAllMocks();
+	});
+
 	test("error when loading YAML throws", async () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
 		makeReadFileSpy(false);
 		expect(
 			await processExtensions({
@@ -19,10 +27,15 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 			})
-		).toEqual({ status: "ERROR" });
+		).toEqual({
+			msg: 'Error loading extension config. Error was: "testing reject readFile"',
+			status: "ERROR",
+		});
+		expect(consoleErrorSpy).toHaveBeenCalledWith("testing reject readFile");
 	});
 
 	test("error when baseline isn't ExtensionConfig[]", async () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
 		makeReadFileSpy({
 			"/path/to/baseline.yml": `[{ "name": "MyExt" }]`, // invalid baseline
 			"/path/to/specifier.yml": `[{ "name": "MyExt" }]`, // valid specifier
@@ -35,7 +48,12 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 			})
-		).toEqual({ status: "ERROR" });
+		).toEqual({ msg: "baseline invalid", status: "ERROR" });
+		expect(consoleErrorSpy.mock.calls).toEqual([
+			["Expected name to be string"],
+			["WikiConfig needs either .repo or .composer value as string"],
+			['Not a valid WikiConfig: {"name":"MyExt"}'],
+		]);
 	});
 
 	test("error when baseline isn't PartialExtensionConfig[]", async () => {
@@ -51,7 +69,7 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 			})
-		).toEqual({ status: "ERROR" });
+		).toEqual({ msg: "specifier invalid", status: "ERROR" });
 	});
 
 	test("indicate changed when a baseline+specifier are valid with no prior install", async () => {
@@ -128,7 +146,7 @@ describe("processExtensions()", () => {
 		});
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: false });
-		makeConsoleErrorSpy();
+		makeConsoleErrorSpy(); // check the error fixme? what's it say?
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const asyncExecMock: any = (cmd: string) => {
