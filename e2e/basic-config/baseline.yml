@@ -452,6 +452,7 @@
 
 # Verify 34.x functionality
 - name: SemanticMeetingMinutes
+  update_php_on_change: "code-changes"
   repo: https://github.com/enterprisemediawiki/SemanticMeetingMinutes.git
   version: tags/1.0.0
   legacy_load: true
@@ -469,7 +470,7 @@
 - name: SemanticMediaWiki
   update_php_on_change: "code-changes"
   composer: "mediawiki/semantic-media-wiki"
-  version: "3.2.2"
+  version: "3.2.3"
   config: |
     // Enable Semantic MediaWiki semantics
     enableSemantics( $wikiId );

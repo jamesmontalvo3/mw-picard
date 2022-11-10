@@ -54,6 +54,10 @@ const run = async (platformYamlPath: string | undefined): Promise<void> => {
 
 	// eslint-disable-next-line no-console
 	console.log(jsonResult); // fixme how is "run update.php or not" info used?
+
+	// FIXME need to write .env file
+
+	// FIXME fix all jinja m_variables
 };
 
 run(process.argv[2]);

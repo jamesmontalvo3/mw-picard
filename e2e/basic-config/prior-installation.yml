@@ -35,7 +35,7 @@
 - name: SemanticMediaWiki
   update_php_on_change: code-changes
   composer: mediawiki/semantic-media-wiki
-  version: 3.2.2
+  version: 3.2.3
   config: >
     // Enable Semantic MediaWiki semantics
 
@@ -69,3 +69,10 @@
 
     $smwgLocalConnectionConf['mw.db.queryengine'] = [ 'read' => DB_REPLICA,
     'write' => DB_REPLICA ];
+- name: SemanticMeetingMinutes
+  update_php_on_change: code-changes
+  repo: https://github.com/enterprisemediawiki/SemanticMeetingMinutes.git
+  version: tags/1.0.0
+  legacy_load: true
+  wikis:
+    - iss
