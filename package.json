@@ -19,6 +19,10 @@
 		"mw-picard": "./dist/index.js"
 	},
 	"repository": "https://github.com/jamesmontalvo3/mw-picard",
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	},
 	"devDependencies": {
 		"@babel/preset-typescript": "^7.16.7",
 		"@types/jest": "^27.4.1",
