@@ -13,7 +13,7 @@ type ProcessExtensionsProps = {
 	mediawiki: string;
 	controllerComposerCmd: string;
 	priorInstallationFilePath: string;
-	dryRun: boolean;
+	dontGetExtensions: boolean;
 };
 
 const processExtensions = async (
@@ -23,7 +23,7 @@ const processExtensions = async (
 	let specifier: PartialExtensionConfig[] | false = false;
 	let priorInstallation: ExtensionConfig[] | false;
 
-	const { dryRun } = paths;
+	const { dontGetExtensions } = paths;
 
 	try {
 		const baselineMaybe = await loadYamlFile(paths.baseline);
@@ -74,15 +74,15 @@ const processExtensions = async (
 		controllerComposerCmd: paths.controllerComposerCmd,
 		extensionsConfig,
 		priorInstallation,
-		dryRun,
+		dontGetExtensions,
 	});
 
 	if (result.status === "ERROR" || result.status === "NOCHANGE") {
 		return result;
 	}
 
-	if (!dryRun) {
-		// Generate specifier `.installed.yml`
+	if (!dontGetExtensions) {
+		// Generate `prior-installation.yml`
 		await fsp.writeFile(
 			paths.priorInstallationFilePath,
 			YAML.dump(extensionsConfig)

@@ -321,13 +321,13 @@ const doExtensions = async ({
 	controllerComposerCmd,
 	extensionsConfig,
 	priorInstallation,
-	dryRun = false,
+	dontGetExtensions = false,
 }: {
 	appMediawikiPath: string;
 	controllerComposerCmd: string;
 	extensionsConfig: ExtensionConfig[];
 	priorInstallation: ExtensionConfig[] | false;
-	dryRun?: boolean;
+	dontGetExtensions?: boolean;
 }): Promise<DoExtensionsResult> => {
 	const skinsPath = path.join(appMediawikiPath, "skins");
 	const extensionsPath = path.join(appMediawikiPath, "extensions");
@@ -347,7 +347,7 @@ const doExtensions = async ({
 	let runUpdatePhp: boolean | string[] = false;
 
 	for (const ext of extensionsConfig) {
-		if (dryRun) {
+		if (dontGetExtensions) {
 			continue;
 		}
 		if ("composer" in ext) {
@@ -395,7 +395,7 @@ const doExtensions = async ({
 		}
 	}
 
-	if (!dryRun) {
+	if (!dontGetExtensions) {
 		const extSettingsSuccess = await doExtensionSettings({
 			extensionsPath,
 			extensionsConfig,

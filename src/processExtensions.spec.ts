@@ -25,7 +25,7 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dryRun: false,
+				dontGetExtensions: false,
 			})
 		).toEqual({
 			msg: 'Error loading extension config. Error was: "testing reject readFile"',
@@ -48,7 +48,7 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dryRun: false,
+				dontGetExtensions: false,
 			})
 		).toEqual({ msg: "baseline invalid", status: "ERROR" });
 		expect(consoleErrorSpy.mock.calls).toEqual([
@@ -71,7 +71,7 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dryRun: false,
+				dontGetExtensions: false,
 			})
 		).toEqual({ msg: "specifier invalid", status: "ERROR" });
 	});
@@ -100,7 +100,7 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dryRun: false,
+				dontGetExtensions: false,
 			})
 		).toEqual({ status: "CHANGED", runUpdatePhp: false });
 	});
@@ -133,7 +133,7 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dryRun: false,
+				dontGetExtensions: false,
 			})
 		).toEqual({ status: "NOCHANGE" });
 	});
@@ -172,7 +172,7 @@ describe("processExtensions()", () => {
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dryRun: false,
+				dontGetExtensions: false,
 			})
 		).toEqual({ status: "ERROR" });
 	});

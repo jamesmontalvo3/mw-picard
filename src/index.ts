@@ -10,7 +10,7 @@ import { loadPlatformConfig } from "./validatePlatformConfig";
 const run = async (
 	platformYamlPath: string | undefined,
 	priorInstallPath: string | undefined,
-	dryRunOption: string | undefined
+	noExtensionsOption: string | undefined
 ): Promise<void> => {
 	if (!platformYamlPath) {
 		console.error("Please supply path to platform.yml as first arg");
@@ -31,7 +31,7 @@ const run = async (
 	const priorInstallationFilePath =
 		priorInstallPath || path.join(configDir, "prior-installation.yml");
 
-	const dryRun = dryRunOption === "--dry-run";
+	const dontGetExtensions = noExtensionsOption === "--no-extensions";
 
 	const extensionUpdateResult = await processExtensions({
 		baseline: extensionsFiles.baseline,
@@ -39,7 +39,7 @@ const run = async (
 		mediawiki: controllerMediawikiPath,
 		controllerComposerCmd,
 		priorInstallationFilePath,
-		dryRun,
+		dontGetExtensions,
 	});
 
 	const jsonResult = JSON.stringify(extensionUpdateResult, null, 2);
@@ -49,24 +49,22 @@ const run = async (
 		process.exit(1);
 	}
 
-	if (!dryRun) {
-		const ls = doLocalSettings(platformConfig);
+	const ls = doLocalSettings(platformConfig);
 
-		if (typeof ls !== "string") {
-			console.error(
-				"Error occurred while creating LocalSettings.php: ",
-				ls.errors
-			);
-			process.exit(1);
-		}
+	if (typeof ls !== "string") {
+		console.error(
+			"Error occurred while creating LocalSettings.php: ",
+			ls.errors
+		);
+		process.exit(1);
+	}
 
-		const lsPath = path.join(controllerMediawikiPath, "LocalSettings.php");
-		try {
-			await fs.promises.writeFile(lsPath, ls);
-		} catch (err) {
-			console.error(`Unable to write ${lsPath}: `, err);
-			process.exit(1);
-		}
+	const lsPath = path.join(controllerMediawikiPath, "LocalSettings.php");
+	try {
+		await fs.promises.writeFile(lsPath, ls);
+	} catch (err) {
+		console.error(`Unable to write ${lsPath}: `, err);
+		process.exit(1);
 	}
 
 	// eslint-disable-next-line no-console
