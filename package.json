@@ -1,5 +1,5 @@
 {
-	"name": "@enterprisemediawiki/mw-picard",
+	"name": "@evamss/mw-picard",
 	"contributors": [
 		"James Montalvo"
 	],
@@ -8,14 +8,17 @@
 		"wiki",
 		"configuration"
 	],
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"license": "MIT",
 	"engines": {
-		"node": "^14.13.1 || >=16.0.0"
+		"node": ">=16.0.0 | >=18.0.0"
 	},
 	"description": "Making MediaWiki config so",
 	"main": "./dist/index.js",
-	"repository": "https://github.com/enterprisemediawiki/mw-picard",
+	"bin": {
+		"mw-picard": "./dist/index.js"
+	},
+	"repository": "https://github.com/jamesmontalvo3/mw-picard",
 	"devDependencies": {
 		"@babel/preset-typescript": "^7.16.7",
 		"@types/jest": "^27.4.1",
@@ -48,7 +51,8 @@
 		"test": "jest",
 		"test:coverage": "jest --coverage --reporters=default --reporters=jest-junit",
 		"test:all": "npm run lint && npm run type-check && npm run test:coverage",
-		"type-check": "tsc --noEmit"
+		"type-check": "tsc --noEmit",
+		"prepublishOnly": "npm run lint && npm run type-check && npm run build"
 	},
 	"dependencies": {
 		"dedent-js": "^1.0.1",

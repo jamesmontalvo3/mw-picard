@@ -1,3 +1,6 @@
+#!/usr/bin/env node
+// needs to start with shebang ^ since this file is what is called via `mw-picard` command
+
 import fs from "fs";
 import path from "upath";
 import doLocalSettings from "./doLocalSettings";
