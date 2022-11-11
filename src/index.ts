@@ -67,6 +67,21 @@ const run = async (
 		process.exit(1);
 	}
 
+	// create wiki-databases.txt for easy looping over in shell
+	const wikiDatabasesTxtPath = path.join(
+		path.dirname(platformYamlPath),
+		"wiki-databases.txt"
+	);
+	try {
+		const content = platformConfig.wikis
+			.map(({ id, dbName }) => `${id}:${dbName}`)
+			.join("\n");
+		await fs.promises.writeFile(wikiDatabasesTxtPath, content);
+	} catch (err) {
+		console.error(`Unable to write ${wikiDatabasesTxtPath}: `, err);
+		process.exit(1);
+	}
+
 	// eslint-disable-next-line no-console
 	console.log(jsonResult);
 };

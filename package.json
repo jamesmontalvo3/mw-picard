@@ -8,7 +8,7 @@
 		"wiki",
 		"configuration"
 	],
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"license": "MIT",
 	"engines": {
 		"node": ">=16.0.0 | >=18.0.0"
@@ -56,7 +56,7 @@
 		"test:coverage": "jest --coverage --reporters=default --reporters=jest-junit",
 		"test:all": "npm run lint && npm run type-check && npm run test:coverage",
 		"type-check": "tsc --noEmit",
-		"prepublishOnly": "npm run lint && npm run type-check && npm run build"
+		"prepublishOnly": "npm run lint && npm run type-check && npm t && npm run build"
 	},
 	"dependencies": {
 		"dedent-js": "^1.0.1",
