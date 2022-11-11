@@ -1,0 +1,68 @@
+loadBalancers: []
+
+wikiAppFqdn: wiki.example.com
+
+wikis:
+  - id: general
+    sitename: General Wiki
+    redirectsFrom:
+      - fod
+    isPrimaryWiki: true
+    dbName: wiki_fod
+    # imagesDir: fod <-- add this
+  - id: iss
+    sitename: ISS Wiki
+    redirectsFrom:
+      - eva
+      - oso
+      - robo
+    dbName: wiki_iss
+  - id: exploration
+    sitename: Exploration Wiki
+    dbName: wiki_exploration
+  - id: sandbox
+    sitename: Sandbox Wiki
+    dbName: wiki_sandbox
+
+#
+# DO NOT CHANGE SETTINGS BELOW
+#
+# These settings are mandated by Meza. You probably don't want
+# to change them unless you really know what you're doing
+#
+
+extensionsFiles:
+  specifier: ./specifier.yml
+  baseline: ./baseline.yml
+
+# Location on app server for uploads, inside wiki subdirs like /uploads/mywiki
+appUploadsDirectory: /uploads
+
+# Location of additional config. Examples:
+# $appMoreConfigPath/preLocalSettings.d/*.php
+# $appMoreConfigPath/wikis/$wikiId/preLocalSettings.d/*.php
+# $appMoreConfigPath/postLocalSettings.d/*.php
+# $appMoreConfigPath/wikis/$wikiId/postLocalSettings.d/*.php
+appMoreConfigPath: /mw-config
+
+# The path to the directory holding MediaWiki may be different on the application server
+# (the server running PHP and serving pages) from the "controller" (the machine that
+# generates config files and makes changes to the system).
+appMediawikiPath: /mediawiki
+
+# controllerMediawikiPath: C:/Users/ejmontal/docs/wiki/mediawiki #../basic-output
+controllerMediawikiPath: ../basic-output
+
+# Location of cache on app server
+appCacheDirectory: /cache
+
+controllerComposerCmd: "composer"
+
+dbMaster: db
+# dbReplicas: [] # not used on Meza
+memcachedServers:
+  - memcached
+elasticsearchServers:
+  - elasticsearch
+
+thisServer: localhost

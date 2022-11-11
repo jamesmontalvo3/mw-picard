@@ -1,6 +1,6 @@
-import doLocalSettings, { doPermissions } from "./doLocalSettings";
+import doLocalSettings from "./doLocalSettings";
 import fs from "fs";
-import path from "path";
+import path from "upath";
 
 describe("doLocalSettings()", () => {
 	const loadLocalSettingsExpectedVals = async (
@@ -18,41 +18,39 @@ describe("doLocalSettings()", () => {
 		);
 	};
 
-	// FIXME name
+	process.env.APP_DB_PASSWORD = "password1";
+	process.env.APP_DB_USER = "theuser";
+	process.env.WG_SECRET_KEY = "1234abc";
+
 	test("case 1: handle typical wiki", async () => {
 		const expected = await loadLocalSettingsExpectedVals(1);
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
 						redirectsFrom: ["oldwiki", "reallyoldwiki"],
 						isPrimaryWiki: true,
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "anon-read",
-				phpConfigPath: "/path/to/config",
-				allowRequestDebug: false,
+				appMoreConfigPath: "/path/to/config",
 				wikiAppFqdn: "wiki.example.com",
-				enableEmail: true,
-				wgPasswordSender: "admin@example.com",
-				wgEmergencyContact: "admin@example.com",
-				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
-				wgAllowExternalImages: true,
-				wgAllowImageTag: true,
-				wgLocaltimezone: "America/Chicago",
+				appCacheDirectory: "/path/to/cache",
 
 				dbMaster: "db-master.example.com",
 				dbReplicas: ["db-replica-1.example.com", "db-replica-2.example.com"],
 
-				wikiAppDbPassword: "password1",
-				wikiAppDbUser: "theuser",
-				thisServer: "appserver.example.com",
 				loadBalancers: ["lb1.example.com", "lb2.example.com"],
 				memcachedServers: ["memcached1.example.com", "memcached2.example.com"],
 				elasticsearchServers: [
@@ -67,44 +65,41 @@ describe("doLocalSettings()", () => {
 	test("case 2: handle two primary wikis and overlapping redirects", async () => {
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
 						redirectsFrom: ["oldwiki", "reallyoldwiki"],
 						isPrimaryWiki: true,
 						dbName: "db_mywiki",
 					},
 					{
 						id: "mywiki2",
+						sitename: "My Wiki 2",
 						isPrimaryWiki: true,
 						dbName: "db_mywiki",
 					},
 					{
 						id: "oldwiki",
+						sitename: "Old Wiki",
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "anon-edit",
-				phpConfigPath: "/path/to/config",
-				allowRequestDebug: false,
+				appMoreConfigPath: "/path/to/config",
 				wikiAppFqdn: "wiki.example.com",
-				enableEmail: true,
-				wgPasswordSender: "admin@example.com",
-				wgEmergencyContact: "admin@example.com",
-				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
-				wgAllowExternalImages: true,
-				wgAllowImageTag: true,
-				wgLocaltimezone: "America/Chicago",
+				appCacheDirectory: "/path/to/cache",
 
-				dbMaster: "appserver.example.com",
+				dbMaster: "localhost", // run it on the app server
 
-				wikiAppDbPassword: "password1",
-				wikiAppDbUser: "theuser",
-				thisServer: "appserver.example.com",
 				loadBalancers: ["lb1.example.com", "lb2.example.com"],
 				memcachedServers: ["memcached1.example.com", "memcached2.example.com"],
 				elasticsearchServers: [
@@ -131,51 +126,46 @@ describe("doLocalSettings()", () => {
 		const expected = await loadLocalSettingsExpectedVals(3);
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
 						redirectsFrom: ["oldwiki", "reallyoldwiki"],
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "user-edit",
-				phpConfigPath: "/path/to/config",
-				allowRequestDebug: false,
+				appMoreConfigPath: "/path/to/config",
 				wikiAppFqdn: "wiki.example.com",
-				enableEmail: true,
-				wgPasswordSender: "admin@example.com",
-				wgEmergencyContact: "admin@example.com",
-				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
-				wgAllowExternalImages: true,
-				wgAllowImageTag: true,
-				wgLocaltimezone: "America/Chicago",
+				appCacheDirectory: "/path/to/cache",
 
 				dbMaster: "db-master.example.com",
 				dbReplicas: [
-					"appserver.example.com",
+					"localhost", // run it on the app server
 					"db-replica-1.example.com",
 					"db-replica-2.example.com",
 				],
 
-				wikiAppDbPassword: "password1",
-				wikiAppDbUser: "theuser",
-				thisServer: "appserver.example.com",
 				loadBalancers: [
-					"appserver.example.com",
+					"localhost", // run it on the app server
 					"lb1.example.com",
 					"lb2.example.com",
 				],
 				memcachedServers: [
-					"appserver.example.com",
+					"localhost", // run it on the app server
 					"memcached1.example.com",
 					"memcached2.example.com",
 				],
 				elasticsearchServers: [
-					"appserver.example.com",
+					"localhost", // run it on the app server
 					"es2.example.com",
 					"es3.example.com",
 				],
@@ -187,90 +177,31 @@ describe("doLocalSettings()", () => {
 		const expected = await loadLocalSettingsExpectedVals(4);
 		expect(
 			doLocalSettings({
+				extensionsFiles: {
+					baseline: "/path/to/baseline.yml",
+					specifier: "/path/to/specifier.yml",
+				},
+				controllerComposerCmd: "/bin/composer",
+				controllerMediawikiPath: "/controller/path/to/mediawiki",
 				wikis: [
 					{
 						id: "mywiki",
+						sitename: "My Wiki",
 						dbName: "db_mywiki",
 					},
 				],
-				pathToWikis: "/path/to/wikis",
-				mediawikiPath: "/path/to/mediawiki",
+				appMediawikiPath: "/path/to/mediawiki",
+				appUploadsDirectory: "/path/to/uploads",
 
-				mezaAuthType: "user-read",
-				phpConfigPath: "/path/to/config",
-				allowRequestDebug: true,
+				appMoreConfigPath: "/path/to/config",
 				wikiAppFqdn: "localhost",
-				enableEmail: false,
-				wgPasswordSender: "admin@example.com",
-				wgEmergencyContact: "admin@example.com",
-				wgSecretKey: "1234abc",
-				rootWgCacheDirectory: "/path/to/cache",
-				wgAllowExternalImages: false,
-				wgAllowImageTag: false,
-				wgLocaltimezone: "America/Chicago",
+				appCacheDirectory: "/path/to/cache",
 
 				dbMaster: "localhost",
-				wikiAppDbPassword: "password1",
-				wikiAppDbUser: "theuser",
-				thisServer: "localhost",
 				loadBalancers: ["localhost"],
 				memcachedServers: ["localhost"],
 				elasticsearchServers: ["localhost"],
 			})
 		).toEqual(expected);
-	});
-});
-
-describe("doPermissions()", () => {
-	test("handle viewer-read permissions", async () => {
-		expect(doPermissions({ mezaAuthType: "viewer-read" })).toEqual(`/**
- *  7) PERMISSIONS
- *
- *
- *
- **/
-# Prevent new user registrations except by sysops
-$wgGroupPermissions['*']['createaccount'] = false;
-
-// no anonymous or ordinary users
-$wgGroupPermissions['*']['read'] = false;
-$wgGroupPermissions['*']['edit'] = false;
-$wgGroupPermissions['user']['read'] = false;
-$wgGroupPermissions['user']['edit'] = false;
-
-// create the Viewer group with read permissions
-$wgGroupPermissions['Viewer'] = $wgGroupPermissions['user'];
-$wgGroupPermissions['Viewer']['read'] = true;
-$wgGroupPermissions['Viewer']['talk'] = true;
-
-// also explicitly give sysop read since you otherwise end up with
-// a chicken/egg situation prior to giving people Viewer
-$wgGroupPermissions['sysop']['read'] = true;
-
-// Create a contributors group that can edit
-$wgGroupPermissions['Contributor'] = $wgGroupPermissions['user'];
-$wgGroupPermissions['Contributor']['edit'] = true;`);
-	});
-
-	test("handle 'none' permissions", async () => {
-		expect(doPermissions({ mezaAuthType: "none" })).toEqual("");
-	});
-	test("handle anon-edit permissions", async () => {
-		expect(doPermissions({ mezaAuthType: "anon-edit" })).toEqual(`/**
- *  7) PERMISSIONS
- *
- *
- *
- **/
-# Prevent new user registrations except by sysops
-$wgGroupPermissions['*']['createaccount'] = false;
-
-// allow anonymous read
-$wgGroupPermissions['*']['read'] = true;
-$wgGroupPermissions['user']['read'] = true;
-
-// allow anonymous write
-$wgGroupPermissions['*']['edit'] = true;
-$wgGroupPermissions['user']['edit'] = true;`);
 	});
 });

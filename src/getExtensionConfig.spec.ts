@@ -4,9 +4,15 @@ import getExtensionConfig, {
 	isPartialExtensionConfigArray,
 	mergeExtensionConfigs,
 } from "./getExtensionConfig";
+import { makeConsoleErrorSpy } from "./test-utils";
 
 describe("isExtensionConfig()", () => {
+	afterEach(() => {
+		jest.clearAllMocks();
+		jest.restoreAllMocks();
+	});
 	test("return false on invalid ExtensionConfig", () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
 		expect(isExtensionConfig(undefined)).toBe(false);
 		expect(isExtensionConfig(null)).toBe(false);
 		expect(isExtensionConfig(false)).toBe(false);
@@ -15,6 +21,7 @@ describe("isExtensionConfig()", () => {
 		expect(isExtensionConfig("ExtensionConfig")).toBe(false);
 		expect(isExtensionConfig({})).toBe(false);
 		expect(isExtensionConfig({ name: "ExtensionName" })).toBe(false);
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(11);
 	});
 
 	test("return true on valid ExtensionConfig", () => {
@@ -44,12 +51,33 @@ describe("isExtensionConfig()", () => {
 });
 
 describe("isExtensionConfigArray()", () => {
+	afterEach(() => {
+		jest.clearAllMocks();
+		jest.restoreAllMocks();
+	});
 	test("return false for non-arrays", () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
+
 		expect(isExtensionConfigArray({})).toEqual(false);
+		expect(consoleErrorSpy).toHaveBeenLastCalledWith(
+			"Extension config array must be array"
+		);
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+
 		expect(isExtensionConfigArray("stuff")).toEqual(false);
+		expect(consoleErrorSpy).toHaveBeenLastCalledWith(
+			"Extension config array must be array"
+		);
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
+
 		expect(isExtensionConfigArray(42)).toEqual(false);
+		expect(consoleErrorSpy).toHaveBeenLastCalledWith(
+			"Extension config array must be array"
+		);
+		expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
 	});
 	test("return false if any array element fails isExtensionConfig()", () => {
+		const consoleErrorSpy = makeConsoleErrorSpy();
 		expect(isExtensionConfigArray([{}, { name: "MyExt" }])).toEqual(false);
 		expect(
 			isExtensionConfigArray([{ name: "MyExt" }, "not an object"])
@@ -91,6 +119,9 @@ describe("isExtensionConfigArray()", () => {
 				{ version: "1.2.3", composer: "group/ext" },
 			])
 		).toEqual(false);
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
+			'Not a valid WikiConfig: {"version":"1.2.3","composer":"group/ext"}'
+		);
 	});
 	test("return true for valid input", () => {
 		expect(
@@ -277,7 +308,7 @@ describe("getExtensionConfig()", () => {
 			{ name: "Extension1", repo: "http:1", version: "1.1.1" },
 			{ name: "Extension2", repo: "http:2", version: "2.2.2" },
 		]);
-		expect(spy).toHaveBeenCalledTimes(1);
+		expect(spy).toHaveBeenCalledTimes(2);
 		spy.mockRestore();
 	});
 });
