@@ -7,7 +7,7 @@ type CommonExtensionConfig = {
 	composer_merge?: boolean;
 	git_submodules?: boolean;
 	legacy_load?: boolean;
-	update_php_on_change?: false | "code-changes" | "all"; // FIXME required?
+	update_php_on_change?: false | "code-changes" | "all";
 	wikis?: string[];
 };
 
@@ -30,19 +30,10 @@ type MWPicardError<E = unknown> = {
 	error: E;
 };
 
-// move totypes.d.ts fixme
 type AppError = {
 	errorType: "AppError";
 	msg: string;
 };
-
-type MezaAuthType =
-	| "none"
-	| "anon-read"
-	| "anon-edit"
-	| "user-edit"
-	| "user-read"
-	| "viewer-read";
 
 type WikiConfig = {
 	id: string;
@@ -53,11 +44,6 @@ type WikiConfig = {
 	 *  - https://www.mediawiki.org/wiki/Manual:$wgMetaNamespace
 	 */
 	sitename: string;
-
-	/**
-	 * Allows a wiki to have a different auth type than the default
-	 */
-	wikiMezaAuthType?: MezaAuthType;
 
 	redirectsFrom?: string[];
 	isPrimaryWiki?: boolean;
@@ -79,28 +65,14 @@ type PlatformConfig = {
 	controllerComposerCmd: string;
 	controllerMediawikiPath: string;
 
-	systemMezaAuthType: MezaAuthType;
-	appMoreConfigPath: string; // FIXME is this really the wiki-specific config path?
-	allowRequestDebug: boolean;
+	appMoreConfigPath: string;
 	wikiAppFqdn: string;
-	enableEmail: boolean;
-	wgPasswordSender: string;
-	wgEmergencyContact: string;
-	wgSecretKey: string; // FIXME make this env var
 	appCacheDirectory: string;
-	wgAllowExternalImages: boolean;
-	wgAllowImageTag: boolean;
-	wgLocaltimezone: string;
 
 	dbMaster: string;
 	dbReplicas?: string[];
 
-	wikiAppDbPassword: string; // FIXME make this env var
-	wikiAppDbUser: string; // FIXME make this env var
-	thisServer: string; // name fixme
 	loadBalancers: string[];
 	memcachedServers: string[];
 	elasticsearchServers: string[];
-
-	
 };

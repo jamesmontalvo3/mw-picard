@@ -16,15 +16,6 @@ const hasStringProp = <K extends string>(
 	return valid;
 };
 
-const hasBooleanProp = <K extends string>(
-	obj: Record<string, unknown>,
-	property: K
-): obj is { [property in K]: boolean } => {
-	const valid = property in obj && typeof obj[property] === "boolean";
-	errorIfInvalid(valid, property, "boolean");
-	return valid;
-};
-
 const hasBooleanOrUndefinedProp = <K extends string>(
 	obj: Record<string, unknown>,
 	property: K
@@ -64,42 +55,6 @@ const hasArrayOfStringsProp = <K extends string>(
 	return valid;
 };
 
-const isMezaAuthType = (value: unknown): value is MezaAuthType => {
-	if (typeof value !== "string") {
-		return false;
-	}
-
-	return [
-		"none",
-		"anon-read",
-		"anon-edit",
-		"user-edit",
-		"user-read",
-		"viewer-read",
-	].includes(value);
-};
-
-const hasMezaAuthTypeProp = <K extends string>(
-	obj: Record<string, unknown>,
-	property: K
-): obj is { [property in K]: MezaAuthType } => {
-	const valid = isMezaAuthType(obj[property]);
-	errorIfInvalid(valid, property, "a meza auth type");
-	return valid;
-};
-
-const hasMezaAuthTypeOrUndefinedProp = <K extends string>(
-	obj: Record<string, unknown>,
-	property: K
-): obj is { [property in K]: MezaAuthType | undefined } => {
-	if (!(property in obj)) {
-		return true;
-	}
-	const valid = isMezaAuthType(obj[property]);
-	errorIfInvalid(valid, property, "a meza auth type or undefined");
-	return valid;
-};
-
 const validateWikiConfig = (value: unknown): WikiConfig | false => {
 	if (!couldBe<WikiConfig>(value)) {
 		return false;
@@ -110,8 +65,7 @@ const validateWikiConfig = (value: unknown): WikiConfig | false => {
 		!hasStringProp(value, "dbName") ||
 		!hasStringProp(value, "sitename") ||
 		!hasBooleanOrUndefinedProp(value, "isPrimaryWiki") ||
-		!hasArrayOfStringsOrUndefinedProp(value, "redirectsFrom") ||
-		!hasMezaAuthTypeOrUndefinedProp(value, "wikiMezaAuthType")
+		!hasArrayOfStringsOrUndefinedProp(value, "redirectsFrom")
 	) {
 		return false;
 	}
@@ -220,26 +174,15 @@ export const loadPlatformConfig = async (
 		!hasStringProp(config, "controllerMediawikiPath") ||
 		!hasStringProp(config, "appMoreConfigPath") ||
 		!hasStringProp(config, "wikiAppFqdn") ||
-		!hasStringProp(config, "wgPasswordSender") ||
-		!hasStringProp(config, "wgEmergencyContact") ||
-		!hasStringProp(config, "wgSecretKey") ||
 		!hasStringProp(config, "appCacheDirectory") ||
-		!hasStringProp(config, "wgLocaltimezone") ||
 		!hasStringProp(config, "dbMaster") ||
-		!hasStringProp(config, "wikiAppDbPassword") ||
-		!hasStringProp(config, "wikiAppDbUser") ||
 		!hasStringProp(config, "thisServer") ||
-		!hasBooleanProp(config, "allowRequestDebug") ||
-		!hasBooleanProp(config, "enableEmail") ||
-		!hasBooleanProp(config, "wgAllowExternalImages") ||
-		!hasBooleanProp(config, "wgAllowImageTag") ||
 		!hasArrayOfStringsProp(config, "loadBalancers") ||
 		!hasArrayOfStringsProp(config, "memcachedServers") ||
 		!hasArrayOfStringsProp(config, "elasticsearchServers") ||
 		!hasArrayOfStringsOrUndefinedProp(config, "dbReplicas") ||
-		!hasMezaAuthTypeProp(config, "systemMezaAuthType") ||
 		!hasWikiConfigArrayProp(config, "wikis") ||
-		!hasExtensionFilesProp(config, "extensionsFiles") // fixme extensionsFiles versus extensionFiles
+		!hasExtensionFilesProp(config, "extensionsFiles")
 	) {
 		return "Properties missing or incorrect types";
 	}

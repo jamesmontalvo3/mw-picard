@@ -10,8 +10,6 @@ import {
 } from "./test-utils";
 
 describe("processExtensions()", () => {
-	// FIXME cleanup mocks after each?
-
 	afterEach(() => {
 		jest.clearAllMocks();
 		jest.restoreAllMocks();
@@ -26,6 +24,8 @@ describe("processExtensions()", () => {
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({
 			msg: 'Error loading extension config. Error was: "testing reject readFile"',
@@ -47,6 +47,8 @@ describe("processExtensions()", () => {
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ msg: "baseline invalid", status: "ERROR" });
 		expect(consoleErrorSpy.mock.calls).toEqual([
@@ -68,6 +70,8 @@ describe("processExtensions()", () => {
 				specifier: "/path/to/specifier.yml",
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ msg: "specifier invalid", status: "ERROR" });
 	});
@@ -95,6 +99,8 @@ describe("processExtensions()", () => {
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ status: "CHANGED", runUpdatePhp: false });
 	});
@@ -119,13 +125,15 @@ describe("processExtensions()", () => {
 		});
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: false });
-		makeAsyncRimrafSpy({ throws: false }); // make async rimraf same as others fixme
+		makeAsyncRimrafSpy({ throws: false });
 		expect(
 			await processExtensions({
 				baseline: baselinePath,
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ status: "NOCHANGE" });
 	});
@@ -146,7 +154,7 @@ describe("processExtensions()", () => {
 		});
 		makeWriteFileSpy({ throws: false });
 		makeAsyncExecSpy({ throws: false });
-		makeConsoleErrorSpy(); // check the error fixme? what's it say?
+		makeConsoleErrorSpy();
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const asyncExecMock: any = (cmd: string) => {
@@ -163,6 +171,8 @@ describe("processExtensions()", () => {
 				specifier: specifierPath,
 				mediawiki: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
+				priorInstallationFilePath: "/path/to/prior-installation.yml",
+				dryRun: false,
 			})
 		).toEqual({ status: "ERROR" });
 	});

@@ -9,14 +9,14 @@ if ( !defined( 'MEDIAWIKI' ) ) {
  *  TABLE OF CONTENTS
  *
  *    1) WIKI-SPECIFIC SETUP
- *    2) DEBUG
+ *    2) (RESERVED)
  *    3) PATH SETUP
- *    4) EMAIL
+ *    4) (RESERVED)
  *    5) DATABASE SETUP
  *    6) GENERAL CONFIGURATION
- *    7) PERMISSIONS
+ *    7) (RESERVED)
  *    8) EXTENSION SETTINGS
- *    9) LOAD OVERRIDES
+ *    9) LOAD POST LOCAL SETTINGS
  *
  **/
 
@@ -29,10 +29,8 @@ if ( !defined( 'MEDIAWIKI' ) ) {
  **/
 if( $wgCommandLineMode ) {
 
-	$mezaWikiEnvVarName='WIKI';
-
-	// get $wikiId from environment variable
-	$wikiId = getenv( $mezaWikiEnvVarName );
+	// get $wikiId from environment variable WIKI
+	$wikiId = getenv( 'WIKI' );
 
 }
 else {
@@ -46,7 +44,7 @@ else {
 
 
 $mezaWikis = [
-	'mywiki' => ['sitename' => 'My Wiki', 'authtype' => false]
+	'mywiki' => ['sitename' => 'My Wiki']
 ];
 
 if ( ! isset( $mezaWikis[$wikiId] ) ) {
@@ -58,7 +56,6 @@ if ( ! isset( $mezaWikis[$wikiId] ) ) {
 }
 
 $wgSitename = $mezaWikis[$wikiId]['sitename'];
-$mezaAuthType = $mezaWikis[$wikiId]['authtype'] ? $mezaWikis[$wikiId]['authtype'] : 'user-read';
 
 #
 # PRE LOCAL SETTINGS
@@ -70,89 +67,6 @@ foreach ( glob("/path/to/config/preLocalSettings.d/*.php") as $filename) {
 #    (2) Load all PHP files in preLocalSettings.d for this wiki
 foreach ( glob("/path/to/config/wikis/$wikiId/preLocalSettings.d/*.php") as $filename) {
 	require_once $filename;
-}
-
-
-/**
- *  2) DEBUG
- *
- *  Options to enable debug are below. The lowest-impact solution should be
- *  chosen. Options are listed from least impact to most impact.
- *    1) Add to the URI you're requesting requestDebug=true to enable debug
- *       for just that request.
- *    2) Set $mezaCommandLineDebug = true; for debug on the command line.
- *       This is the default, which can be overriden in preLocalSettings_allWiki.php.
- *    5) Set $mezaForceDebug = true; to turn on debug for all users and wikis
- **/
-$mezaCommandLineDebug = true; // always want debug on command line
-$mezaForceDebug = false; // this is here to be able to alter LocalSettings
-
-
-if ( $mezaForceDebug ) {
-	$debug = true;
-}
-
-elseif ( $wgCommandLineMode && $mezaCommandLineDebug ) {
-	$debug = true;
-}
-
-// allows appending ?requestDebug=true to any URL to see debug. Disable this in production
-elseif ( isset( $_GET['requestDebug'] ) ) {
-	$debug = true;
-}
-
-else {
-	$debug = false;
-}
-
-
-if ( $debug ) {
-
-	// turn error logging on
-	error_reporting( -1 );
-	ini_set( 'display_errors', 1 );
-	ini_set( 'log_errors', 1 );
-
-	// Output errors to log file
-	// ini_set( 'error_log', "$m_meza_data/logs/php/php_errors.log" );
-
-
-	// Displays debug data at the bottom of the content area in a formatted
-	// list below a horizontal line.
-	$wgShowDebug = true;
-
-	// A more elaborative debug toolbar with interactive panels.
-	$wgDebugToolbar = true;
-
-	// Uncaught exceptions will print a complete stack trace to output (instead
-	// of just to logs)
-	$wgShowExceptionDetails = true;
-
-	// SQL statements are dumped to the $wgDebugLogFile (if set) /and/or to
-	// HTML output (if $wgDebugComments is true)
-	$wgDebugDumpSql  = true;
-
-	// If on, some debug items may appear in comments in the HTML output.
-	$wgDebugComments = false;
-
-	// The file name of the debug log, or empty if disabled. wfDebug() appends
-	// to this file.
-	$wgDebugLogFile = "/opt/data-meza/logs/mw-debug.log";
-
-	// If true, show a backtrace for database errors.
-	$wgShowDBErrorBacktrace = true;
-
-	// Shows the actual query when errors occur (in HTML, I think. Not logs)
-	$wgShowSQLErrors = true;
-
-}
-
-// production: no error reporting
-else {
-
-	error_reporting(0);
-	ini_set("display_errors", 0);
-
 }
 
 
@@ -199,23 +113,6 @@ $wgResourceBasePath = $wgScriptPath;
 
 
 /**
- *  4) EMAIL
- *
- *  Email configuration
- **/
-$wgEnableEmail = false;
-
-## UPO means: this is also a user preference option
-$wgEnableUserEmail = $wgEnableEmail; # UPO
-$wgEnotifUserTalk = $wgEnableEmail; # UPO
-$wgEnotifWatchlist = $wgEnableEmail; # UPO
-$wgEmailAuthentication = $wgEnableEmail;
-
-$wgPasswordSender = 'admin@example.com';
-$wgEmergencyContact = 'admin@example.com';
-
-
-/**
  *  5) DATABASE SETUP
  *
  *
@@ -226,7 +123,6 @@ $mezaDatabaseServers = [
 
 $mezaDatabasePassword = 'password1';
 $mezaDatabaseUser = 'theuser';
-$mezaThisServer = 'localhost';
 
 $mezaWikiDatabases = [
 	'mywiki' => 'db_mywiki'
@@ -248,9 +144,6 @@ $databaseReadLoadRatio = 1;
 
 $wgDBservers = array();
 foreach( $mezaDatabaseServers as $databaseServer ) {
-	if ( $databaseServer === $mezaThisServer ) {
-		$databaseServer = 'localhost';
-	}
 	$wgDBservers[] = array(
 		'host' => $databaseServer,
 		'dbname' => $wgDBname,
@@ -307,20 +200,8 @@ $wgMemCachedServers = [
 // AuthPlugin/AuthManager.
 $wgSessionCacheType = CACHE_MEMCACHED;
 
-## To enable image uploads, make sure the 'images' directory
-## is writable, then set this to true:
-$wgEnableUploads = true;
-$wgMaxUploadSize = 1024*1024*100; // 100 MB
 $wgUseImageMagick = true;
 $wgImageMagickConvertCommand = "/usr/bin/convert";
-
-# InstantCommons allows wiki to use images from http://commons.wikimedia.org
-$wgUseInstantCommons = false;
-
-## If you use ImageMagick (or any other shell command) on a
-## Linux server, this will need to be set to the name of an
-## available UTF-8 locale
-$wgShellLocale = "en_US.utf8";
 
 ## If you want to use image uploads under safe mode,
 ## create the directories images/archive, images/thumb and
@@ -328,31 +209,11 @@ $wgShellLocale = "en_US.utf8";
 ## this, if it's not already uncommented:
 $wgHashedUploadDirectory = true;
 
-# Site language code, should be one of the list in ./languages/Names.php
-$wgLanguageCode = "en";
-
 # https://www.mediawiki.org/wiki/Manual:$wgSecretKey
 $wgSecretKey = '1234abc';
 
-## For attaching licensing metadata to pages, and displaying an
-## appropriate copyright notice / icon. GNU Free Documentation
-## License and Creative Commons licenses are supported so far.
-$wgRightsPage = ""; # Set to the title of a wiki page that describes your license/copyright
-$wgRightsUrl = "";
-$wgRightsText = "";
-$wgRightsIcon = "";
-
 # Path to the GNU diff3 utility. Used for conflict resolution.
 $wgDiff3 = "/usr/bin/diff3";
-
-## Default skin: you can change the default skin. Use the internal symbolic
-## names, ie 'vector', 'monobook': see MezaCoreSkins.yml for choices.
-$wgDefaultSkin = "vector";
-
-// allows users to remove the page title.
-// https://www.mediawiki.org/wiki/Manual:$wgRestrictDisplayTitle
-$wgRestrictDisplayTitle = false;
-
 
 /**
  * Directory for caching data in the local filesystem. Should not be accessible
@@ -369,108 +230,11 @@ $wgRestrictDisplayTitle = false;
  */
 $wgCacheDirectory = "/path/to/cache/$wikiId";
 
-// opens external links in new window
-$wgExternalLinkTarget = '_blank';
-
-// added this line to allow linking. specifically to Imagery Online.
-$wgAllowExternalImages = false;
-$wgAllowImageTag = false;
-
-$wgVectorUseSimpleSearch = true;
-
-//$wgDefaultUserOptions['useeditwarning'] = 1;
-
-// disable page edit warning (edit warning affect Semantic Forms)
-$wgVectorFeatures['editwarning']['global'] = false;
-
-$wgDefaultUserOptions['rememberpassword'] = 1;
-
-// users watch pages by default (they can override in settings)
-$wgDefaultUserOptions['watchdefault'] = 1;
-$wgDefaultUserOptions['watchmoves'] = 1;
-$wgDefaultUserOptions['watchdeletion'] = 1;
-$wgDefaultUserOptions['watchcreations'] = 1;
-
-// fixes login issue for some users (login issue fixed in MW version 1.18.1 supposedly)
-$wgDisableCookieCheck = true;
-
-#Set Default Timezone
-$wgLocaltimezone = 'America/Chicago';
-$oldtz = getenv("TZ");
-putenv("TZ=$wgLocaltimezone");
-
-$wgMaxImageArea = 1.25e10; // Images on [[Snorkel]] fail without this
-// $wgMemoryLimit = 500000000; //Default is 50M. This is 500M.
-
-// Increase from default setting for large form
-// See https://www.mediawiki.org/wiki/Extension_talk:Semantic_Forms/Archive_April_to_June_2012#Error:_Backtrace_limit_exceeded_during_parsing
-// If set to 10million, errors are seen when using Edit with form on mission pages like 41S
-// ini_set( 'pcre.backtrack_limit', 10000000 ); //10million
-ini_set( 'pcre.backtrack_limit', 1000000000 ); //1 billion
-
-// Allowed file types
-$wgFileExtensions = array(
-	'aac',
-	'bmp',
-	'docx',
-	'gif',
-	'jpg',
-	'jpeg',
-	'mpp',
-	'mp3',
-	'msg',
-	'odg',
-	'odp',
-	'ods',
-	'odt',
-	'pdf',
-	'png',
-	'pptx',
-	'ps',
-	'svg',
-	'tiff',
-	'txt',
-	'xlsx',
-	'zip'
-);
-
-// Tell Universal Language Selector not to try to guess language based upon IP
-// address. This (a) isn't likely needed in enterprise use cases and (b) fails
-// anyway due to outdated URLs or firewall rules.
-$wgULSGeoService = false;
-
-$wgNamespacesWithSubpages[NS_MAIN] = true;
-
-$wgUseRCPatrol = false;
-
-
-/**
- *  7) PERMISSIONS
- *
- *
- *
- **/
-# Prevent new user registrations except by sysops
-$wgGroupPermissions['*']['createaccount'] = false;
-
-// no anonymous
-$wgGroupPermissions['*']['read'] = false;
-$wgGroupPermissions['*']['edit'] = false;
-
-// users read NOT write, but can talk
-$wgGroupPermissions['user']['read'] = true;
-$wgGroupPermissions['user']['edit'] = false;
-$wgGroupPermissions['user']['talk'] = true;
-
-$wgGroupPermissions['Contributor'] = $wgGroupPermissions['user'];
-$wgGroupPermissions['Contributor']['edit'] = true;
-
 
 /**
  *  8) EXTENSION SETTINGS
  *
- *  Extensions defined in meza core and meza local yaml files, which are used to  *  load the extensions via Git or Composer, and which generate the PHP files
- *  below.
+ *  Load separate file that includes all extensions to be loaded
  */
 
 require_once "/path/to/mediawiki/extensions/ExtensionSettings.php";
@@ -479,9 +243,8 @@ require_once "/path/to/mediawiki/extensions/ExtensionSettings.php";
 /**
  * Extension:CirrusSearch
  *
- * CirrusSearch cluster(s) are defined based upon Ansible hosts file and thus
- * cannot be easily added to base-extensions.yml. As such, CirrusSearch config
- * is included directly in LocalSettings.php.j2
+ * CirrusSearch cluster(s) need to be referenced, which is easier to do here rather than in
+ * the CirrusSearch config in ExtensionSettings.php
  */
 $wgSearchType = 'CirrusSearch';
 $wgCirrusSearchClusters['default'] = [

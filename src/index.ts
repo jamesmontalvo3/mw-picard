@@ -4,7 +4,11 @@ import doLocalSettings from "./doLocalSettings";
 import processExtensions from "./processExtensions";
 import { loadPlatformConfig } from "./validatePlatformConfig";
 
-const run = async (platformYamlPath: string | undefined): Promise<void> => {
+const run = async (
+	platformYamlPath: string | undefined,
+	priorInstallPath: string | undefined,
+	dryRunOption: string | undefined
+): Promise<void> => {
 	if (!platformYamlPath) {
 		console.error("Please supply path to platform.yml as first arg");
 		process.exit(1);
@@ -20,11 +24,19 @@ const run = async (platformYamlPath: string | undefined): Promise<void> => {
 	const { controllerComposerCmd, extensionsFiles, controllerMediawikiPath } =
 		platformConfig;
 
+	const configDir = path.dirname(extensionsFiles.specifier);
+	const priorInstallationFilePath =
+		priorInstallPath || path.join(configDir, "prior-installation.yml");
+
+	const dryRun = dryRunOption === "--dry-run";
+
 	const extensionUpdateResult = await processExtensions({
 		baseline: extensionsFiles.baseline,
 		specifier: extensionsFiles.specifier,
 		mediawiki: controllerMediawikiPath,
 		controllerComposerCmd,
+		priorInstallationFilePath,
+		dryRun,
 	});
 
 	const jsonResult = JSON.stringify(extensionUpdateResult, null, 2);
@@ -34,30 +46,28 @@ const run = async (platformYamlPath: string | undefined): Promise<void> => {
 		process.exit(1);
 	}
 
-	const ls = doLocalSettings(platformConfig);
+	if (!dryRun) {
+		const ls = doLocalSettings(platformConfig);
 
-	if (typeof ls !== "string") {
-		console.error(
-			"Error occurred while creating LocalSettings.php: ",
-			ls.errors
-		);
-		process.exit(1);
-	}
+		if (typeof ls !== "string") {
+			console.error(
+				"Error occurred while creating LocalSettings.php: ",
+				ls.errors
+			);
+			process.exit(1);
+		}
 
-	const lsPath = path.join(controllerMediawikiPath, "LocalSettings.php");
-	try {
-		await fs.promises.writeFile(lsPath, ls);
-	} catch (err) {
-		console.error(`Unable to write ${lsPath}: `, err);
-		process.exit(1);
+		const lsPath = path.join(controllerMediawikiPath, "LocalSettings.php");
+		try {
+			await fs.promises.writeFile(lsPath, ls);
+		} catch (err) {
+			console.error(`Unable to write ${lsPath}: `, err);
+			process.exit(1);
+		}
 	}
 
 	// eslint-disable-next-line no-console
-	console.log(jsonResult); // fixme how is "run update.php or not" info used?
-
-	// FIXME need to write .env file
-
-	// FIXME fix all jinja m_variables
+	console.log(jsonResult);
 };
 
-run(process.argv[2]);
+run(process.argv[2], process.argv[3], process.argv[4]);

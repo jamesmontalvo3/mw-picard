@@ -61,7 +61,6 @@ describe("pathResolve()", () => {
 
 	// INVALID CASES
 	test("reject root path /", async () => {
-		// fixme why?
 		expect(pathResolve("/", false)).toEqual(false);
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 	});
