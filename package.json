@@ -8,10 +8,10 @@
 		"wiki",
 		"configuration"
 	],
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"license": "MIT",
 	"engines": {
-		"node": ">=16.0.0 | >=18.0.0"
+		"node": ">=16.0.0 || >=18.0.0"
 	},
 	"description": "Making MediaWiki config so",
 	"main": "./dist/index.js",
