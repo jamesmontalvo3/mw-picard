@@ -88,7 +88,7 @@ export const createLoadCommand = (ext: ExtensionConfig): string => {
 		const mwInstallPath = "$IP"; // When MediaWiki includes ExtensionSettings.php, $IP is set
 		const type = ext.skin ? "skins" : "extensions";
 		const extensionRequirePath = `${mwInstallPath}/${type}/${ext.name}/${ext.name}.php`;
-		return `require_once '${extensionRequirePath}';\n`;
+		return `require_once "${extensionRequirePath}";\n`;
 	}
 
 	return ext.skin
