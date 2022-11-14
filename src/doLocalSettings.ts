@@ -278,7 +278,7 @@ const doDatabase = ({
 				'user' => $mezaDatabaseUser,
 				'password' => $mezaDatabasePassword,
 				'type' => "mysql",
-				'flags' => $debug ? DBO_DEFAULT | DBO_DEBUG : DBO_DEFAULT,
+				'flags' => DBO_DEFAULT,
 				'load' => $databaseReadLoadRatio,
 			);
 			$databaseReadLoadRatio = 10; // every server after the first gets the same loading

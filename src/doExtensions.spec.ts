@@ -634,7 +634,7 @@ describe("createLoadCommand()", () => {
 				version: "1.2.3.",
 				legacy_load: true,
 			})
-		).toEqual("require_once '$IP/extensions/MyExt/MyExt.php';\n");
+		).toEqual('require_once "$IP/extensions/MyExt/MyExt.php";\n');
 	});
 	test("return require_once for legacy loaded skin", () => {
 		expect(
@@ -645,7 +645,7 @@ describe("createLoadCommand()", () => {
 				legacy_load: true,
 				skin: true,
 			})
-		).toEqual("require_once '$IP/skins/MySkin/MySkin.php';\n");
+		).toEqual('require_once "$IP/skins/MySkin/MySkin.php";\n');
 	});
 	test("use extension loader for normal extensions", () => {
 		expect(
@@ -741,7 +741,7 @@ $wgMyExtVar3 = [];
 			})
 		).toEqual(
 			`/**** MyExt @ 1.2.3 ****/
-require_once '$IP/extensions/MyExt/MyExt.php';
+require_once "$IP/extensions/MyExt/MyExt.php";
 $wgMyExtVar = 42;
 $wgMyExtVar2 = 'test';
 $wgMyExtVar3 = [];
