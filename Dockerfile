@@ -1,7 +1,18 @@
-FROM node:16-alpine
-ENV NODE_ENV=production
-WORKDIR /mw-picard
-COPY ./dist/* /mw-picard/
+#
+# BUILDER image
+#
+FROM node:16-alpine AS builder
+WORKDIR /src
+
+COPY package*.json ./
 RUN npm install
-EXPOSE 8080
-CMD [ "node", "" ]
+
+COPY . /src
+RUN npm run esbuild
+
+#
+# FINAL image
+#
+FROM node:16-alpine as final
+RUN apk add --update --no-cache git
+COPY --from=builder /src/dist/picard.js /picard.js
