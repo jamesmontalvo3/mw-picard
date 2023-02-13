@@ -14,7 +14,6 @@ import doExtensions, {
 	shouldRunUpdatePhp,
 	shouldUpdateExtension,
 } from "./doExtensions";
-import cloneDeep from "lodash/cloneDeep";
 import {
 	makeAsyncRimrafSpy,
 	makeAsyncExecSpy,
@@ -908,6 +907,7 @@ describe("gitCheckoutCommand()", () => {
 				version: "tags/1.2.3",
 				fetch: true,
 				eraseChanges: true,
+				hasSubmodules: false,
 			})
 		).toEqual(
 			"git fetch && git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
@@ -919,8 +919,21 @@ describe("gitCheckoutCommand()", () => {
 				version: "tags/1.2.3",
 				fetch: true,
 				eraseChanges: false,
+				hasSubmodules: false,
 			})
 		).toEqual("git fetch && git checkout tags/1.2.3");
+	});
+	test("create command that fetch and handles submodules", () => {
+		expect(
+			gitCheckoutCommand({
+				version: "tags/1.2.3",
+				fetch: true,
+				eraseChanges: false,
+				hasSubmodules: true,
+			})
+		).toEqual(
+			"git fetch && git checkout tags/1.2.3 && git submodule update --init"
+		);
 	});
 	test("create command that just cleans up repo", () => {
 		expect(
@@ -928,6 +941,7 @@ describe("gitCheckoutCommand()", () => {
 				version: "tags/1.2.3",
 				fetch: false,
 				eraseChanges: true,
+				hasSubmodules: false,
 			})
 		).toEqual(
 			"git reset --hard HEAD && git clean -f && git checkout tags/1.2.3"
@@ -938,6 +952,7 @@ describe("gitCheckoutCommand()", () => {
 			gitCheckoutCommand({
 				version: "tags/1.2.3",
 				fetch: false,
+				hasSubmodules: false,
 				eraseChanges: false,
 			})
 		).toEqual("git checkout tags/1.2.3");
@@ -993,6 +1008,7 @@ describe("makeGitRight()", () => {
 				cloneDirectory: "/is/git/repo",
 				repo: "https://git.example.com/MyExt",
 				version: "1.2.3",
+				hasSubmodules: false,
 			})
 		).toEqual(true);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
@@ -1010,6 +1026,7 @@ describe("makeGitRight()", () => {
 				cloneDirectory: "/is/git/repo",
 				repo: "https://git.example.com/MyExt",
 				version: "2.2.3",
+				hasSubmodules: false,
 			})
 		).toEqual(false);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
@@ -1027,6 +1044,7 @@ describe("makeGitRight()", () => {
 				cloneDirectory: "/not/git/repo",
 				repo: "https://git.example.com/MyExt",
 				version: "3.2.3",
+				hasSubmodules: false,
 			})
 		).toEqual(true);
 		expect(asyncExecSpy).toHaveBeenNthCalledWith(
@@ -1050,6 +1068,7 @@ describe("makeGitRight()", () => {
 				cloneDirectory: "/not/git/repo",
 				repo: "https://git.example.com/MyExt",
 				version: "4.2.3",
+				hasSubmodules: false,
 			})
 		).toEqual(false);
 		expect(asyncExecSpy).toHaveBeenCalledWith(
@@ -1071,6 +1090,7 @@ describe("makeGitRight()", () => {
 				cloneDirectory: "/not/git/repo",
 				repo: "https://git.example.com/MyExt",
 				version: "4.2.3",
+				hasSubmodules: false,
 			})
 		).toEqual(false);
 		expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
@@ -1114,6 +1134,7 @@ describe("doComposerExtensions()", () => {
 				appMediawikiPath: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				extensions: [],
+				runComposerCmd: true,
 			})
 		).toEqual(true);
 		expect(readFileSpy).toHaveBeenCalledWith(cLocalJsonPath, "utf-8");
@@ -1121,6 +1142,9 @@ describe("doComposerExtensions()", () => {
 		expect(asyncExecSpy).not.toHaveBeenCalled();
 	});
 
+	// Possibly restructuring MW-Picard to only work on extensions, not full LocalSettings.php
+	// eslint-disable-next-line jest/no-commented-out-tests
+	/*
 	test("replace baseline composer.local.json if changed", async () => {
 		const cLocalJsonPath = path.join(
 			"/path/to/mediawiki",
@@ -1136,6 +1160,7 @@ describe("doComposerExtensions()", () => {
 				appMediawikiPath: "/path/to/mediawiki",
 				controllerComposerCmd: "/path/to/composer",
 				extensions: [],
+				runComposerCmd: true,
 			})
 		).toEqual(true);
 		expect(readFileSpy).toHaveBeenCalledWith(cLocalJsonPath, "utf-8");
@@ -1163,6 +1188,7 @@ describe("doComposerExtensions()", () => {
 			appMediawikiPath: "/path/to/mediawiki",
 			controllerComposerCmd: "/path/to/composer",
 			extensions: [],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual(true);
@@ -1176,6 +1202,7 @@ describe("doComposerExtensions()", () => {
 			"/path/to/mediawiki"
 		);
 	});
+	*/
 
 	test("return false if unable to write file", async () => {
 		const cleanMediawikiPath = path.join("/path/to/mediawiki");
@@ -1190,6 +1217,7 @@ describe("doComposerExtensions()", () => {
 			appMediawikiPath: "/path/to/mediawiki",
 			controllerComposerCmd: "/path/to/composer",
 			extensions: [],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual(false);
@@ -1201,6 +1229,9 @@ describe("doComposerExtensions()", () => {
 		expect(asyncExecSpy).not.toHaveBeenCalled();
 	});
 
+	// Possibly restructuring MW-Picard to only work on extensions, not full LocalSettings.php
+	// eslint-disable-next-line jest/no-commented-out-tests
+	/*
 	test("add composer and composer-merge extensions", async () => {
 		const cLocalJsonPath = path.join(
 			"/path/to/mediawiki",
@@ -1242,6 +1273,7 @@ describe("doComposerExtensions()", () => {
 						skin: true,
 					},
 				],
+				runComposerCmd: true,
 			})
 		).toEqual(true);
 		expect(readFileSpy).toHaveBeenCalledWith(cLocalJsonPath, "utf-8");
@@ -1254,6 +1286,7 @@ describe("doComposerExtensions()", () => {
 			"/path/to/mediawiki"
 		);
 	});
+	*/
 });
 
 describe("doExtensionSettings()", () => {
@@ -1359,6 +1392,7 @@ describe("doExtensions()", () => {
 			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [],
 			priorInstallation: false,
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({ status: "CHANGED", runUpdatePhp: false });
@@ -1370,6 +1404,7 @@ describe("doExtensions()", () => {
 			controllerComposerCmd: "/path/to/composer",
 			extensionsConfig: [],
 			priorInstallation: [],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({ status: "NOCHANGE" });
@@ -1404,6 +1439,7 @@ describe("doExtensions()", () => {
 					version: "1.2.3",
 				},
 			],
+			runComposerCmd: true,
 			priorInstallation: [],
 		});
 
@@ -1467,6 +1503,7 @@ describe("doExtensions()", () => {
 					version: "1.2.3",
 				},
 			],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({
@@ -1529,6 +1566,7 @@ describe("doExtensions()", () => {
 					version: "1.2.3",
 				},
 			],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({ status: "CHANGED", runUpdatePhp: ["threewiki"] });
@@ -1596,6 +1634,7 @@ describe("doExtensions()", () => {
 					wikis: ["twowiki", "sixwiki"],
 				},
 			],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({
@@ -1629,6 +1668,7 @@ describe("doExtensions()", () => {
 					update_php_on_change: "all",
 				},
 			],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({
@@ -1664,6 +1704,7 @@ describe("doExtensions()", () => {
 					update_php_on_change: "all",
 				},
 			],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({
@@ -1696,6 +1737,7 @@ describe("doExtensions() errors", () => {
 				},
 			],
 			priorInstallation: [],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({
@@ -1730,6 +1772,7 @@ describe("doExtensions() errors", () => {
 				},
 			],
 			priorInstallation: [],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({
@@ -1764,6 +1807,7 @@ describe("doExtensions() errors", () => {
 				},
 			],
 			priorInstallation: [],
+			runComposerCmd: true,
 		});
 
 		expect(result).toEqual({

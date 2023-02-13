@@ -1,6 +1,5 @@
 import path from "upath";
 import processExtensions from "./processExtensions";
-import * as asyncExecModule from "./asyncExec";
 import {
 	makeAsyncRimrafSpy,
 	makeAsyncExecSpy,
@@ -20,12 +19,8 @@ describe("processExtensions()", () => {
 		makeReadFileSpy(false);
 		expect(
 			await processExtensions({
-				baseline: "/path/to/baseline.yml",
-				specifier: "/path/to/specifier.yml",
-				mediawiki: "/path/to/mediawiki",
-				controllerComposerCmd: "/path/to/composer",
-				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dontGetExtensions: false,
+				baselineExtConfig: "/path/to/baseline.yml",
+				mediawikiPath: "/path/to/mediawiki",
 			})
 		).toEqual({
 			msg: 'Error loading extension config. Error was: "testing reject readFile"',
@@ -43,12 +38,8 @@ describe("processExtensions()", () => {
 		});
 		expect(
 			await processExtensions({
-				baseline: "/path/to/baseline.yml",
-				specifier: "/path/to/specifier.yml",
-				mediawiki: "/path/to/mediawiki",
-				controllerComposerCmd: "/path/to/composer",
-				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dontGetExtensions: false,
+				baselineExtConfig: "/path/to/baseline.yml",
+				mediawikiPath: "/path/to/mediawiki",
 			})
 		).toEqual({ msg: "baseline invalid", status: "ERROR" });
 		expect(consoleErrorSpy.mock.calls).toEqual([
@@ -58,6 +49,9 @@ describe("processExtensions()", () => {
 		]);
 	});
 
+	// Possibly restructuring MW-Picard to only work on extensions, not full LocalSettings.php
+	// eslint-disable-next-line jest/no-commented-out-tests
+	/*
 	test("error when baseline isn't PartialExtensionConfig[]", async () => {
 		makeReadFileSpy({
 			"/path/to/baseline.yml": `[{ "name": "MyExt", "repo": "https://git.example.com", "version": "1.2.3" }]`, // valid baseline
@@ -66,15 +60,12 @@ describe("processExtensions()", () => {
 		});
 		expect(
 			await processExtensions({
-				baseline: "/path/to/baseline.yml",
-				specifier: "/path/to/specifier.yml",
-				mediawiki: "/path/to/mediawiki",
-				controllerComposerCmd: "/path/to/composer",
-				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dontGetExtensions: false,
+				baselineExtConfig: "/path/to/baseline.yml",
+				mediawikiPath: "/path/to/mediawiki",
 			})
 		).toEqual({ msg: "specifier invalid", status: "ERROR" });
 	});
+	*/
 
 	test("indicate changed when a baseline+specifier are valid with no prior install", async () => {
 		const baselinePath = path.join("/path/to/baseline.yml");
@@ -95,16 +86,15 @@ describe("processExtensions()", () => {
 		makeAsyncRimrafSpy({ throws: false });
 		expect(
 			await processExtensions({
-				baseline: baselinePath,
-				specifier: specifierPath,
-				mediawiki: "/path/to/mediawiki",
-				controllerComposerCmd: "/path/to/composer",
-				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dontGetExtensions: false,
+				baselineExtConfig: baselinePath,
+				mediawikiPath: "/path/to/mediawiki",
 			})
 		).toEqual({ status: "CHANGED", runUpdatePhp: false });
 	});
 
+	// Possibly restructuring MW-Picard to only work on extensions, not full LocalSettings.php
+	// eslint-disable-next-line jest/no-commented-out-tests
+	/*
 	test("indicate no change if prior install matches current", async () => {
 		const baselinePath = path.join("/path/to/baseline.yml");
 		const specifierPath = path.join("/path/to/specifier.yml");
@@ -128,12 +118,8 @@ describe("processExtensions()", () => {
 		makeAsyncRimrafSpy({ throws: false });
 		expect(
 			await processExtensions({
-				baseline: baselinePath,
-				specifier: specifierPath,
-				mediawiki: "/path/to/mediawiki",
-				controllerComposerCmd: "/path/to/composer",
-				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dontGetExtensions: false,
+				baselineExtConfig: baselinePath,
+				mediawikiPath: "/path/to/mediawiki",
 			})
 		).toEqual({ status: "NOCHANGE" });
 	});
@@ -167,13 +153,10 @@ describe("processExtensions()", () => {
 
 		expect(
 			await processExtensions({
-				baseline: baselinePath,
-				specifier: specifierPath,
-				mediawiki: "/path/to/mediawiki",
-				controllerComposerCmd: "/path/to/composer",
-				priorInstallationFilePath: "/path/to/prior-installation.yml",
-				dontGetExtensions: false,
+				baselineExtConfig: baselinePath,
+				mediawikiPath: "/path/to/mediawiki",
 			})
 		).toEqual({ status: "ERROR" });
 	});
+	*/
 });

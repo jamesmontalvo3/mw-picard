@@ -139,12 +139,6 @@ export const isGitRepo = async (dir: string): Promise<boolean> => {
 	return true;
 };
 
-type CheckoutProps = {
-	version: string;
-	fetch: boolean;
-	eraseChanges: boolean;
-};
-
 /**
  * Returns a command like: `git checkout ${version}`, optionally prefixed with `git fetch &&`, etc
  */
@@ -152,7 +146,13 @@ export const gitCheckoutCommand = ({
 	version,
 	fetch,
 	eraseChanges,
-}: CheckoutProps): string => {
+	hasSubmodules,
+}: {
+	version: string;
+	fetch: boolean;
+	eraseChanges: boolean;
+	hasSubmodules: boolean;
+}): string => {
 	const cmd = [];
 	if (fetch) {
 		cmd.push("git fetch");
@@ -164,6 +164,10 @@ export const gitCheckoutCommand = ({
 	// If version is a branch, this might not change anything without origin/${version}
 	// For now don't really want to get into that, since Meza should pin commits or tags
 	cmd.push(`git checkout ${version}`);
+
+	if (hasSubmodules) {
+		cmd.push("git submodule update --init");
+	}
 
 	return cmd.join(" && ");
 };
@@ -183,10 +187,12 @@ export const makeGitRight = async ({
 	cloneDirectory,
 	repo,
 	version,
+	hasSubmodules,
 }: {
 	cloneDirectory: string;
 	repo: string;
 	version: string;
+	hasSubmodules: boolean;
 }): Promise<boolean> => {
 	let repoExists: boolean;
 	try {
@@ -201,6 +207,7 @@ export const makeGitRight = async ({
 			version,
 			fetch: true,
 			eraseChanges: true,
+			hasSubmodules,
 		});
 		return runCommand(cmd, cloneDirectory);
 	} else {
@@ -214,6 +221,7 @@ export const makeGitRight = async ({
 			version,
 			fetch: false,
 			eraseChanges: false,
+			hasSubmodules,
 		});
 		return runCommand(cmd2, cloneDirectory);
 	}
@@ -236,10 +244,12 @@ export const doComposerExtensions = async ({
 	appMediawikiPath,
 	controllerComposerCmd,
 	extensions,
+	runComposerCmd,
 }: {
 	appMediawikiPath: string;
 	controllerComposerCmd: string;
 	extensions: ExtensionConfig[];
+	runComposerCmd: boolean;
 }): Promise<boolean> => {
 	const composerJson: ComposerJson = {
 		require: {},
@@ -278,8 +288,12 @@ export const doComposerExtensions = async ({
 		return false;
 	}
 
+	if (!runComposerCmd) {
+		return true;
+	}
+
 	return runCommand(
-		`${controllerComposerCmd} install && ${controllerComposerCmd} update`,
+		`${controllerComposerCmd} install --no-dev && ${controllerComposerCmd} update --no-dev`,
 		appMediawikiPath
 	);
 };
@@ -321,12 +335,14 @@ const doExtensions = async ({
 	controllerComposerCmd,
 	extensionsConfig,
 	priorInstallation,
+	runComposerCmd,
 	dontGetExtensions = false,
 }: {
 	appMediawikiPath: string;
 	controllerComposerCmd: string;
 	extensionsConfig: ExtensionConfig[];
 	priorInstallation: ExtensionConfig[] | false;
+	runComposerCmd: boolean;
 	dontGetExtensions?: boolean;
 }): Promise<DoExtensionsResult> => {
 	const skinsPath = path.join(appMediawikiPath, "skins");
@@ -366,6 +382,7 @@ const doExtensions = async ({
 			cloneDirectory,
 			repo: ext.repo,
 			version: ext.version,
+			hasSubmodules: Boolean(ext.git_submodules),
 		});
 
 		if (!success) {
@@ -409,6 +426,7 @@ const doExtensions = async ({
 			appMediawikiPath,
 			controllerComposerCmd,
 			extensions: extensionsConfig,
+			runComposerCmd,
 		});
 
 		if (!composerSuccess) {

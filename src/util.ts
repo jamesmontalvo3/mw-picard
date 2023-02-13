@@ -77,7 +77,7 @@ export const errorIfInvalid = (
 	type: string
 ): boolean => {
 	if (!isValid) {
-		console.error(`Expected ${property} to be ${type}`);
+		console.error(new Error(`Expected ${property} to be ${type}`));
 	}
 	return isValid;
 };
